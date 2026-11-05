@@ -1,0 +1,25 @@
+# Local development services. Start with: docker compose up -d
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: physio-postgres
+    restart: unless-stopped
+    environment:
+      # Local development credentials only. Never reuse them on a real server.
+      POSTGRES_USER: physio
+      POSTGRES_PASSWORD: physio_dev_password
+      POSTGRES_DB: physio_app
+    ports:
+      # Bound to localhost only, so the database isn't reachable from your network
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Keeps the data when the container is stopped or recreated
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U physio -d physio_app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

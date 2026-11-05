@@ -1,0 +1,39 @@
+// Prisma schema: database tables are defined here as "models".
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider            = "prisma-client"
+  // Generated inside src/ so NestJS compiles it together with the app
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Exercise library ────────────────────────────────────────────────
+
+/// Main purpose of an exercise
+enum ExerciseGoal {
+  STRENGTH
+  AEROBIC
+  RESPIRATORY
+  BALANCE
+  MOBILITY
+}
+
+/// An exercise in the library that physios can assign to patients
+model Exercise {
+  id                String       @id @default(uuid())
+  name              String
+  description       String
+  videoUrl          String?
+  goal              ExerciseGoal
+  level             Int          @default(1)
+  equipment         String[] // e.g. ["chair", "resistance band"]; empty = no equipment
+  contraindications String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
