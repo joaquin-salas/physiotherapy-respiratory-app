@@ -16,6 +16,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Import alias: "@/components/..." → "src/components/..." */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
