@@ -6,6 +6,9 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // All routes start with /api (e.g. /api/exercises), so the web panel's proxy can forward them
+  app.setGlobalPrefix('api');
+
   // Validates every request body against its DTO (class-validator decorators)
   app.useGlobalPipes(
     new ValidationPipe({
