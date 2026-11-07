@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  hashKey,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { ApiError } from '@/lib/api-client';
 import { authApi, type CurrentUser, type LoginInput } from './auth.api';
 
@@ -35,11 +40,16 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: authApi.logout,
-    // Even if the request fails, forget everything locally: the next user of this
-    // browser must not see the previous physio's cached data
+    // Even if the request fails, log out locally and forget all cached data:
+    // the next user of this browser must not see the previous physio's data.
     onSettled: () => {
-      queryClient.clear();
+      // Update the current user in place (RequireAuth is subscribed to it and
+      // redirects to /login). Don't remove this query: removing it would
+      // disconnect RequireAuth from the cache and it would never see the change.
       queryClient.setQueryData(currentUserKey, null);
+      queryClient.removeQueries({
+        predicate: (query) => query.queryHash !== hashKey(currentUserKey),
+      });
     },
   });
 }

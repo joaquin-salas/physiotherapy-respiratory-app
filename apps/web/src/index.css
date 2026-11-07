@@ -127,4 +127,9 @@
   html {
     @apply font-sans;
     }
+  /* Tailwind v4 no longer sets a hand cursor on buttons; restore it */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
