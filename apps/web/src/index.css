@@ -127,9 +127,25 @@
   html {
     @apply font-sans;
     }
-  /* Tailwind v4 no longer sets a hand cursor on buttons; restore it */
-  button:not(:disabled),
-  [role='button']:not(:disabled) {
+  /* Hand cursor on everything clickable (Tailwind v4 no longer sets it on buttons).
+     Links already have it. Disabled items keep the normal arrow. */
+  :is(
+      button,
+      select,
+      summary,
+      input[type='checkbox'],
+      input[type='radio'],
+      [role='button'],
+      [role='option'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='checkbox'],
+      [role='radio']
+    ):not(:disabled, [data-disabled], [aria-disabled='true']) {
+    cursor: pointer;
+  }
+  /* The calendar icon inside date inputs */
+  input::-webkit-calendar-picker-indicator {
     cursor: pointer;
   }
 }
