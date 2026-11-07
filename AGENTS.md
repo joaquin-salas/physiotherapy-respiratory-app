@@ -120,7 +120,10 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
 ## Current status
 
 - Done: monorepo, PostgreSQL + Prisma, exercises CRUD API + panel page, models for physios/patients/programs,
-  physio authentication (login/logout, protected API and panel).
-- Not done: patients/programs API and pages, patient device pairing (QR), workout logging models, access log,
+  physio authentication (login/logout, protected API and panel), patients API + panel (list, create, record,
+  edit, discharge/reactivate). Physios see only their own patients (others → 404); ADMIN sees and edits all.
+  Patients are never deleted (clinical records must be kept): they are discharged (`dischargedAt`).
+  In the UI this is **"Finalizar seguimiento"**, never "dar de alta" ("alta" also means signing up in Spanish).
+- Not done: programs API and pages, patient device pairing (QR), workout logging models, access log,
   Flutter app, deployment.
 - Known: deleting an exercise that is used in a program returns 500 (Prisma P2003). Return 409 when building the programs API.
