@@ -4,6 +4,8 @@ import {
   useWatch,
   type Control,
   type FieldErrors,
+  type FieldValues,
+  type Path,
   type UseFormRegister,
 } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -17,15 +19,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Exercise } from '@/features/exercises/exercises.api';
-import type { LineValues, ProgramFormValues } from './program-form.schema';
+import type { LineValues } from './exercise-line.schema';
 import { EFFORT_OPTIONS } from './programs.labels';
 
-interface ProgramLineFieldsProps {
-  routineIndex: number;
+interface ExerciseLineFieldsProps<T extends FieldValues> {
+  /** Where this line lives in the form, e.g. "routines.0.exercises.2" or "exercises.2" */
+  basePath: string;
   index: number;
   total: number;
-  control: Control<ProgramFormValues>;
-  register: UseFormRegister<ProgramFormValues>;
+  control: Control<T>;
+  register: UseFormRegister<T>;
   errors?: FieldErrors<LineValues>;
   exercises: Exercise[]; // the library, to choose from
   onMove: (to: number) => void;
@@ -35,9 +38,12 @@ interface ProgramLineFieldsProps {
 /** Radix Select doesn't allow an empty value, so "not set" uses this placeholder value */
 const NO_EFFORT = 'none';
 
-/** The fields of one exercise line inside a routine */
-export function ProgramLineFields({
-  routineIndex,
+/**
+ * The fields of one exercise line. Used by the program builder and the template editor,
+ * so it works with any form: it only needs to know where the line is (`basePath`).
+ */
+export function ExerciseLineFields<T extends FieldValues>({
+  basePath,
   index,
   total,
   control,
@@ -46,10 +52,10 @@ export function ProgramLineFields({
   exercises,
   onMove,
   onRemove,
-}: ProgramLineFieldsProps) {
-  const path = `routines.${routineIndex}.exercises.${index}` as const;
-  const mode = useWatch({ control, name: `${path}.mode` });
-  const id = (field: string) => `r${routineIndex}-e${index}-${field}`;
+}: ExerciseLineFieldsProps<T>) {
+  const p = (field: keyof LineValues) => `${basePath}.${field}` as Path<T>;
+  const mode = useWatch({ control, name: p('mode') }) as LineValues['mode'];
+  const id = (field: string) => `${basePath.replaceAll('.', '-')}-${field}`;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border p-4">
@@ -63,7 +69,7 @@ export function ProgramLineFields({
             Ejercicio
           </FieldLabel>
           <Controller
-            name={`${path}.exerciseId`}
+            name={p('exerciseId')}
             control={control}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
@@ -129,7 +135,7 @@ export function ProgramLineFields({
             id={id('sets')}
             inputMode="numeric"
             aria-invalid={!!errors?.sets}
-            {...register(`${path}.sets`)}
+            {...register(p('sets'))}
           />
           <FieldError errors={[errors?.sets]} />
         </Field>
@@ -137,7 +143,7 @@ export function ProgramLineFields({
         <Field>
           <FieldLabel htmlFor={id('mode')}>Se mide en</FieldLabel>
           <Controller
-            name={`${path}.mode`}
+            name={p('mode')}
             control={control}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
@@ -161,7 +167,7 @@ export function ProgramLineFields({
             id={id('amount')}
             inputMode="numeric"
             aria-invalid={!!errors?.amount}
-            {...register(`${path}.amount`)}
+            {...register(p('amount'))}
           />
           <FieldError errors={[errors?.amount]} />
         </Field>
@@ -172,7 +178,7 @@ export function ProgramLineFields({
             id={id('restSec')}
             inputMode="numeric"
             aria-invalid={!!errors?.restSec}
-            {...register(`${path}.restSec`)}
+            {...register(p('restSec'))}
           />
           <FieldError errors={[errors?.restSec]} />
         </Field>
@@ -180,7 +186,7 @@ export function ProgramLineFields({
         <Field>
           <FieldLabel htmlFor={id('targetEffort')}>Esfuerzo</FieldLabel>
           <Controller
-            name={`${path}.targetEffort`}
+            name={p('targetEffort')}
             control={control}
             render={({ field }) => (
               <Select
@@ -211,7 +217,7 @@ export function ProgramLineFields({
         <Input
           id={id('notes')}
           placeholder="Ej.: parar si nota mucho ahogo"
-          {...register(`${path}.notes`)}
+          {...register(p('notes'))}
         />
       </Field>
     </div>

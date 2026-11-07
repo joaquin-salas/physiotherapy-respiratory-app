@@ -25,6 +25,11 @@ export function RoutinesView({ routines }: { routines: Routine[] }) {
             <span className="ml-2 font-mono tracking-wider text-muted-foreground">
               {formatDays(routine.daysOfWeek)}
             </span>
+            {routine.template && (
+              <span className="ml-2 font-normal text-muted-foreground">
+                · basada en «{routine.template.name}»
+              </span>
+            )}
           </p>
           <Table>
             <TableHeader>

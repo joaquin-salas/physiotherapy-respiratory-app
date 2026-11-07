@@ -87,6 +87,7 @@ export function ProgramBuilderDialog(props: ProgramBuilderDialogProps) {
     handleSubmit,
     reset,
     getValues,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ProgramFormValues>({
@@ -300,6 +301,7 @@ export function ProgramBuilderDialog(props: ProgramBuilderDialogProps) {
                   index={activeTab}
                   control={control}
                   register={register}
+                  setValue={setValue}
                   errors={errors.routines?.[activeTab]}
                   exercises={library}
                 />

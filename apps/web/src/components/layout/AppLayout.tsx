@@ -1,4 +1,4 @@
-import { Dumbbell, LogOut, Users } from 'lucide-react';
+import { ClipboardList, Dumbbell, LogOut, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser, useLogout } from '@/features/auth/auth.hooks';
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/patients', label: 'Pacientes', icon: Users },
+  { to: '/templates', label: 'Plantillas', icon: ClipboardList },
   { to: '/exercises', label: 'Ejercicios', icon: Dumbbell },
 ];
 

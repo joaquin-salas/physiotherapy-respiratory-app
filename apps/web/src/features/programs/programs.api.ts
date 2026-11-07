@@ -44,6 +44,8 @@ export interface RoutineExercise {
 /** A fixed session repeated on some days of the week */
 export interface Routine {
   id: string;
+  templateId: string | null; // the template it was loaded from
+  template: { id: string; name: string } | null;
   name: string;
   order: number;
   daysOfWeek: Weekday[];
@@ -77,6 +79,7 @@ export interface RoutineExerciseInput {
 
 export interface RoutineInput {
   id?: string;
+  templateId: string | null;
   name: string;
   daysOfWeek: Weekday[];
   exercises: RoutineExerciseInput[]; // in session order
