@@ -34,7 +34,7 @@ pnpm monorepo:
 ```
 apps/api      NestJS + Prisma 7 + PostgreSQL     (TypeScript)
 apps/web      React + Vite, physio panel         (TypeScript)
-apps/mobile   Flutter, patient app               (Dart, not created yet, not in the pnpm workspace)
+apps/mobile   Flutter, patient app               (Dart, not in the pnpm workspace)
 docker-compose.yml   local PostgreSQL 18
 ```
 
@@ -70,7 +70,33 @@ pnpm --filter api test:e2e             # needs the database running
 pnpm --filter api user:create --role PHYSIO --email x@example.com --name "Nombre"   # create a panel account (prints a password)
 ```
 
-Before finishing a task, run `pnpm build` and `pnpm lint`.
+Mobile app (run inside `apps/mobile`; Flutter SDK in `C:\Users\joaqu\develop\flutter`, stable channel):
+
+```bash
+flutter emulators --launch Medium_Tablet   # start the tablet emulator (or Android Studio → Device Manager)
+flutter run                                # build + run on the running device (r = hot reload, R = restart)
+flutter analyze | flutter test             # lint/type-check, tests
+flutter pub add <package>                  # add a dependency
+```
+
+Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze` + `flutter test` if you touched `apps/mobile`).
+
+## Mobile app
+
+- **App ID (temporary):** Android `applicationId` `com.joaquinsalas.respira_app`, iOS bundle ID
+  `com.joaquinsalas.respiraApp` (iOS doesn't allow `_`). Created with `--org com.joaquinsalas` while it's unclear
+  who will publish the app. **Decide the final ID before the first store release**: after publishing it can never
+  change (a new ID is a new app). Change it in `android/app/build.gradle.kts` (`namespace`, `applicationId`, plus
+  the Kotlin package folder under `android/app/src/main/kotlin/`) and `ios/Runner.xcodeproj/project.pbxproj`
+  (`PRODUCT_BUNDLE_IDENTIFIER`).
+- Dart package name `respira_app` (imports: `package:respira_app/...`). Platforms: Android and iOS only.
+  iOS builds need a Mac with Xcode; on Windows, develop and test on Android.
+- Telemetry is off on the dev machine: Flutter and Dart (`--disable-analytics`), Android Studio/emulator
+  (declined in the setup wizard, `~/.android/analytics.settings` → `hasOptedIn: false`), VS Code
+  (`telemetry.telemetryLevel: off`). Google's new Android CLI (used behind the deprecated `sdkmanager`) has no
+  persistent opt-out, only a per-command `--no-metrics`; its uploads are pointed at a dead address with the user
+  env vars `ANDROID_CLI_ANALYTICS_URL` / `ANDROID_CLI_CRASH_URL` = `http://127.0.0.1:9/` (undocumented, read from
+  its code). Install SDK packages from Android Studio's SDK Manager rather than `sdkmanager`.
 
 ## Conventions
 
@@ -119,6 +145,14 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
 - **Migrations run in folder-name order.** A hand-named folder must sort *after* every existing one, or a fresh
   database (new server, CI) applies it too early. Check with `ls prisma/migrations` before naming one, and
   verify from scratch by running `prisma migrate deploy` against a throwaway database.
+- **`flutter emulators --launch` can fail silently** (no emulator process, no error). If no device shows up in
+  `flutter devices`, start it from Android Studio's Device Manager or run
+  `%LOCALAPPDATA%\Android\Sdk\emulator\emulator.exe -avd Medium_Tablet` to see its log. The first boot logs
+  "hanging thread" / crash-report warnings but finishes booting; wait for it.
+- **The Android build needs the exact NDK Flutter asks for** (`flutter.ndkVersion`, currently `28.2.13676358`).
+  Gradle's auto-install fails ("Package ndk not found") because `sdkmanager` now delegates to the new Android CLI.
+  Install it from Android Studio → SDK Manager → SDK Tools → Show Package Details → NDK (Side by side).
+  The first `flutter run` takes several minutes (Gradle downloads); later runs are fast.
 
 ## Current status
 
@@ -140,5 +174,7 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
   plantilla" in the program builder **copies** the lines into a routine and sets `Routine.templateId`
   (SetNull when the template is deleted). Exercise-line rules shared in `programs/routine-exercises.ts` (API)
   and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). "Plantillas" page in the panel.
+- Flutter app: project created with `flutter create` (still the template counter app). State management,
+  routing and HTTP client not chosen yet.
 - Not done: "Guardar como plantilla" from a patient's routine, patient device pairing (QR), workout logging
-  models, access log, Flutter app, deployment.
+  models, access log, Flutter app screens, deployment.
