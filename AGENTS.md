@@ -124,6 +124,14 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
   edit, discharge/reactivate). Physios see only their own patients (others → 404); ADMIN sees and edits all.
   Patients are never deleted (clinical records must be kept): they are discharged (`dischargedAt`).
   In the UI this is **"Finalizar seguimiento"**, never "dar de alta" ("alta" also means signing up in Spanish).
-- Not done: programs API and pages, patient device pairing (QR), workout logging models, access log,
+- Patient programs: `Program` (the treatment) → 1–2 `Routine`s (a fixed session repeated on its `daysOfWeek`;
+  a day belongs to at most one routine, other days are rest) → `RoutineExercise` (sets, reps **or** durationSec,
+  rest, `targetEffortPct` = target perceived effort 0–100 in steps of 10, i.e. 50 % ↔ 5/10). Physios said
+  routines are therapeutic, very similar, and progress mainly by effort %, reps or days per week.
+  One ACTIVE program per patient (assigning a new one ends the previous); ENDED programs are read-only
+  history; no DELETE. `PUT /programs/:id` sends the whole program and updates routines and lines **by id**
+  (not delete + recreate) so future workout logs can reference them. Programs reuse
+  `PatientsService.visibleTo()` for access rules. UI: builder with one tab per routine in the patient record.
+- Not done: templates (separate tables, shared by all physios; probably **routine** templates, since physios say
+  routines are pre-established), patient device pairing (QR), workout logging models, access log,
   Flutter app, deployment.
-- Known: deleting an exercise that is used in a program returns 500 (Prisma P2003). Return 409 when building the programs API.
