@@ -36,4 +36,120 @@ model Exercise {
   contraindications String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+
+  programExercises ProgramExercise[]
+}
+
+// ─── People ──────────────────────────────────────────────────────────
+// Login credentials will live in a separate User table (auth task).
+
+/// A physiotherapist who manages their own patients
+model Physiotherapist {
+  id            String   @id @default(uuid())
+  fullName      String
+  licenseNumber String?  @unique // professional registration number
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patients Patient[]
+}
+
+/// A patient's clinical profile. No identifying data here (see PatientIdentity).
+model Patient {
+  id                String   @id @default(uuid())
+  physiotherapistId String
+  diagnosis         String
+  stage             String?
+  currentTreatment  String?
+  comorbidities     String[]
+  initialAssessment String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  physiotherapist Physiotherapist  @relation(fields: [physiotherapistId], references: [id])
+  identity        PatientIdentity?
+  programs        Program[]
+
+  @@index([physiotherapistId])
+}
+
+/// Identifying data, kept apart from clinical data (GDPR pseudonymisation)
+model PatientIdentity {
+  id         String   @id @default(uuid())
+  patientId  String   @unique
+  fullName   String
+  birthDate  DateTime @db.Date
+  phone      String?
+  nationalId String?  @unique // DNI/NIE
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// ─── Programs ────────────────────────────────────────────────────────
+
+/// Clinical profile a program is designed for
+enum ProgramProfile {
+  PREHAB
+  POST_SURGERY
+  DURING_TREATMENT
+  SURVIVOR
+}
+
+enum ProgramStatus {
+  ACTIVE
+  ENDED
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+/// A set of prescribed exercises.
+/// patientId = null means it is a template; assigning a template copies it to the patient.
+/// A patient's current program is the one with status ACTIVE.
+model Program {
+  id        String          @id @default(uuid())
+  patientId String?
+  name      String
+  profile   ProgramProfile?
+  status    ProgramStatus   @default(ACTIVE)
+  startDate DateTime?       @db.Date
+  endDate   DateTime?       @db.Date
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  patient   Patient?          @relation(fields: [patientId], references: [id])
+  exercises ProgramExercise[]
+
+  @@index([patientId])
+}
+
+/// One exercise inside a program, with its prescription
+model ProgramExercise {
+  id          String    @id @default(uuid())
+  programId   String
+  exerciseId  String
+  order       Int // position in the session, starting at 1
+  sets        Int
+  reps        Int? // either reps or durationSec, depending on the exercise
+  durationSec Int?
+  restSec     Int
+  daysOfWeek  Weekday[]
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  program  Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([programId])
+  @@index([exerciseId])
 }
