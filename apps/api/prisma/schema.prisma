@@ -37,7 +37,7 @@ model Exercise {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  programExercises ProgramExercise[]
+  routineExercises RoutineExercise[]
 }
 
 // ─── Authentication ──────────────────────────────────────────────────
@@ -174,44 +174,60 @@ enum Weekday {
   SUNDAY
 }
 
-/// A set of prescribed exercises.
-/// patientId = null means it is a template; assigning a template copies it to the patient.
-/// A patient's current program is the one with status ACTIVE.
+/// A patient's exercise program.
+/// A patient has one ACTIVE program at most; older ones are ENDED (kept as history, read-only).
 model Program {
   id        String          @id @default(uuid())
-  patientId String?
+  patientId String
   name      String
   profile   ProgramProfile?
   status    ProgramStatus   @default(ACTIVE)
-  startDate DateTime?       @db.Date
-  endDate   DateTime?       @db.Date
+  startDate DateTime        @default(now()) @db.Date
+  endDate   DateTime?       @db.Date // set when the program ends
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  patient   Patient?          @relation(fields: [patientId], references: [id])
-  exercises ProgramExercise[]
+  patient  Patient   @relation(fields: [patientId], references: [id])
+  routines Routine[]
 
   @@index([patientId])
 }
 
-/// One exercise inside a program, with its prescription
-model ProgramExercise {
-  id          String    @id @default(uuid())
-  programId   String
-  exerciseId  String
-  order       Int // position in the session, starting at 1
-  sets        Int
-  reps        Int? // either reps or durationSec, depending on the exercise
-  durationSec Int?
-  restSec     Int
-  daysOfWeek  Weekday[]
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+/// A fixed session the patient repeats on some days of the week ("Rutina A: L X V").
+/// A program has 1–2 routines; a day belongs to at most one routine (other days are rest).
+model Routine {
+  id         String    @id @default(uuid())
+  programId  String
+  name       String
+  order      Int // 1, 2… (display order)
+  daysOfWeek Weekday[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  program  Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
-  exercise Exercise @relation(fields: [exerciseId], references: [id])
+  program   Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
 
   @@index([programId])
+}
+
+/// One exercise inside a routine, with its prescription
+model RoutineExercise {
+  id              String   @id @default(uuid())
+  routineId       String
+  exerciseId      String
+  order           Int // position in the session, starting at 1
+  sets            Int
+  reps            Int? // either reps or durationSec, depending on the exercise
+  durationSec     Int?
+  restSec         Int
+  targetEffortPct Int? // target perceived effort, 0–100 in steps of 10 (50 = 5/10)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([routineId])
   @@index([exerciseId])
 }

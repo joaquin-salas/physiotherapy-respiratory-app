@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateExerciseDto } from './dto/create-exercise.dto.js';
@@ -34,6 +38,15 @@ export class ExercisesService {
     try {
       return await this.prisma.exercise.delete({ where: { id } });
     } catch (error) {
+      // P2003 = foreign key violation: the exercise is used in a program
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException(
+          'This exercise is used in a program and cannot be deleted',
+        );
+      }
       throw this.notFoundOr(error, id);
     }
   }

@@ -1,5 +1,4 @@
 import {
-  isDateOnly,
   isValidNationalId,
   isValidSpanishPhone,
   normalizeNationalId,
@@ -35,15 +34,5 @@ describe('DNI/NIE', () => {
 
   it('normalizes to uppercase without separators', () => {
     expect(normalizeNationalId(' 12345678-z ')).toBe('12345678Z');
-  });
-});
-
-describe('dates', () => {
-  it('accepts real YYYY-MM-DD dates only', () => {
-    expect(isDateOnly('1950-03-15')).toBe(true);
-    expect(isDateOnly('2024-02-29')).toBe(true); // leap year
-    expect(isDateOnly('2026-02-30')).toBe(false);
-    expect(isDateOnly('19500-03-15')).toBe(false);
-    expect(isDateOnly('1950-03-15T10:00:00Z')).toBe(false);
   });
 });

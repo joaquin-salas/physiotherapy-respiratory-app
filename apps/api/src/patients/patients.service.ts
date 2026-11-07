@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth.decorators.js';
-import { Prisma, UserRole } from '../generated/prisma/client.js';
+import { Prisma, ProgramStatus, UserRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
 import {
@@ -103,7 +103,10 @@ export class PatientsService {
     }
   }
 
-  /** Discharge (alta): hidden from the active list, app access revoked, data kept */
+  /**
+   * Discharge ("Finalizar seguimiento" in the UI): hidden from the active list,
+   * active program ended, app access revoked, data kept.
+   */
   async discharge(user: AuthUser, id: string) {
     const patient = await this.findOne(user, id);
     if (patient.dischargedAt) return patient;
@@ -112,6 +115,10 @@ export class PatientsService {
       this.prisma.patient.update({
         where: { id },
         data: { dischargedAt: new Date() },
+      }),
+      this.prisma.program.updateMany({
+        where: { patientId: id, status: ProgramStatus.ACTIVE },
+        data: { status: ProgramStatus.ENDED, endDate: new Date() },
       }),
       this.prisma.user.update({
         where: { id: patient.userId },
@@ -143,8 +150,11 @@ export class PatientsService {
     return this.findOne(user, id);
   }
 
-  /** Admins see every patient; physios only their own */
-  private visibleTo(user: AuthUser): Prisma.PatientWhereInput {
+  /**
+   * Admins see every patient; physios only their own.
+   * Public so other modules (programs) apply exactly the same rule.
+   */
+  visibleTo(user: AuthUser): Prisma.PatientWhereInput {
     if (user.role === UserRole.ADMIN) return {};
     if (!user.physiotherapistId) throw new ForbiddenException();
     return { physiotherapistId: user.physiotherapistId };

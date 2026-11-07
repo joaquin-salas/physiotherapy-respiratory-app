@@ -14,11 +14,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Sex } from '../../generated/prisma/enums.js';
-import {
-  IsDateOnly,
-  IsNationalId,
-  IsSpanishPhone,
-} from '../patient-validation.js';
+import { IsDateOnly } from '../../common/date-only.js';
+import { IsNationalId, IsSpanishPhone } from '../patient-validation.js';
 
 /** Identifying data (stored apart from clinical data, in PatientIdentity) */
 export class PatientIdentityDto {

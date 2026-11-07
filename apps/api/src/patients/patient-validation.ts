@@ -1,6 +1,6 @@
 import { ValidateBy, ValidationOptions } from 'class-validator';
 
-// Format checks for Spanish phone numbers and DNI/NIE, plus "YYYY-MM-DD" dates.
+// Format checks for Spanish phone numbers and DNI/NIE.
 // The web panel has a copy of these checks (patient-validation.ts) for instant feedback.
 
 /** "+34 600-12 34 56" → "600123456": drops separators and the Spanish prefix */
@@ -33,15 +33,6 @@ export function isValidNationalId(value: string): boolean {
   return CONTROL_LETTERS[Number(digits) % 23] === match[2];
 }
 
-/** A real calendar date written as "YYYY-MM-DD" (4-digit year) */
-export function isDateOnly(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00Z`);
-  return (
-    !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value) // rejects 2026-02-30
-  );
-}
-
 // ─── class-validator decorators for DTOs ─────────────────────────────
 
 /** Empty strings pass: the service stores them as null */
@@ -70,29 +61,6 @@ export function IsNationalId(options?: ValidationOptions) {
           typeof value === 'string' &&
           (value.trim() === '' || isValidNationalId(value)),
         defaultMessage: () => '$property must be a valid DNI or NIE',
-      },
-    },
-    options,
-  );
-}
-
-/** "YYYY-MM-DD", a real date, optionally not in the future */
-export function IsDateOnly(
-  { notFuture = false } = {},
-  options?: ValidationOptions,
-) {
-  return ValidateBy(
-    {
-      name: 'isDateOnly',
-      validator: {
-        validate: (value) =>
-          typeof value === 'string' &&
-          isDateOnly(value) &&
-          (!notFuture || value <= new Date().toISOString().slice(0, 10)),
-        defaultMessage: () =>
-          notFuture
-            ? '$property must be a YYYY-MM-DD date, not in the future'
-            : '$property must be a YYYY-MM-DD date',
       },
     },
     options,
