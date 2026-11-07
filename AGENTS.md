@@ -116,6 +116,9 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
 - **`prisma migrate dev` refuses to run in a non-interactive shell** (e.g. an agent's) when it wants to show a
   warning. Generate the SQL with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`
   into a new `prisma/migrations/<timestamp>_<name>/migration.sql`, then `prisma migrate deploy` + `prisma generate`.
+- **Migrations run in folder-name order.** A hand-named folder must sort *after* every existing one, or a fresh
+  database (new server, CI) applies it too early. Check with `ls prisma/migrations` before naming one, and
+  verify from scratch by running `prisma migrate deploy` against a throwaway database.
 
 ## Current status
 
@@ -132,6 +135,10 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
   history; no DELETE. `PUT /programs/:id` sends the whole program and updates routines and lines **by id**
   (not delete + recreate) so future workout logs can reference them. Programs reuse
   `PatientsService.visibleTo()` for access rules. UI: builder with one tab per routine in the patient record.
-- Not done: templates (separate tables, shared by all physios; probably **routine** templates, since physios say
-  routines are pre-established), patient device pairing (QR), workout logging models, access log,
-  Flutter app, deployment.
+- Routine templates: `RoutineTemplate` → `RoutineTemplateExercise` (same prescription fields), a library shared by
+  all physios (anyone creates/edits/deletes; not clinical records). No days: chosen per patient. "Cargar
+  plantilla" in the program builder **copies** the lines into a routine and sets `Routine.templateId`
+  (SetNull when the template is deleted). Exercise-line rules shared in `programs/routine-exercises.ts` (API)
+  and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). "Plantillas" page in the panel.
+- Not done: "Guardar como plantilla" from a patient's routine, patient device pairing (QR), workout logging
+  models, access log, Flutter app, deployment.
