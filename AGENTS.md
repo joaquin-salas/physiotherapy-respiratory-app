@@ -67,6 +67,7 @@ pnpm build | pnpm lint | pnpm test     # all apps
 pnpm --filter api prisma:migrate       # after editing schema.prisma (migrate + generate)
 pnpm --filter api prisma:studio        # browse the database
 pnpm --filter api test:e2e             # needs the database running
+pnpm --filter api user:create --role PHYSIO --email x@example.com --name "Nombre"   # create a panel account (prints a password)
 ```
 
 Before finishing a task, run `pnpm build` and `pnpm lint`.
@@ -85,6 +86,17 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
 - Use the `@/` import alias in the web app.
 - **Conventional Commits** with scopes: `feat(api): ...`, `fix(web): ...`, `chore: ...`. Commit only when asked.
 
+## Authentication
+
+- Our own code in `apps/api/src/auth/` (no auth library). Opaque random session tokens; the DB stores only
+  their SHA-256 hash (`Session` table). Passwords are hashed with argon2 (`@node-rs/argon2`).
+- Web panel: token in an `httpOnly`, `Secure`, `SameSite=Strict` cookie named `session` (72 h). Patient app
+  (later): `Authorization: Bearer <token>`. `AuthGuard` accepts both.
+- **Every route requires login by default** (global `AuthGuard`). Use `@Public()` to open one, `@Roles(...)`
+  to restrict by role, and `@CurrentUser()` to get `{ userId, role, physiotherapistId, patientId }`.
+- No public sign-up: panel accounts are created with `user:create`. Patients will pair a device with a QR code.
+- Web: `RequireAuth` guards pages; any 401 sets the current user to `null` and redirects to `/login`.
+
 ## Gotchas (each of these has already cost time)
 
 - **Prisma 7: `prisma migrate dev` does not regenerate the client.** Use `pnpm --filter api prisma:migrate`, which runs both.
@@ -101,9 +113,14 @@ Before finishing a task, run `pnpm build` and `pnpm lint`.
 - Some initializers (`prisma init`, CLI generators) write agent/skill folders (`.claude/`, `.cursor/`, `.agents/`…)
   or telemetry setup into the repo. Remove them; don't commit them.
 - `pnpm lint` shows `only-export-components` warnings in shadcn's generated `ui/` files. They're expected.
+- **`prisma migrate dev` refuses to run in a non-interactive shell** (e.g. an agent's) when it wants to show a
+  warning. Generate the SQL with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`
+  into a new `prisma/migrations/<timestamp>_<name>/migration.sql`, then `prisma migrate deploy` + `prisma generate`.
 
 ## Current status
 
-- Done: monorepo, PostgreSQL + Prisma, `Exercise` model, exercises CRUD API, web panel with exercises table + create form.
-- Not done: authentication (the API is open), patients/programs/sessions models, Flutter app, deployment.
-- Known: the two starter tests for `AppController` fail (the demo endpoint was changed). Fix or remove them when touching that code.
+- Done: monorepo, PostgreSQL + Prisma, exercises CRUD API + panel page, models for physios/patients/programs,
+  physio authentication (login/logout, protected API and panel).
+- Not done: patients/programs API and pages, patient device pairing (QR), workout logging models, access log,
+  Flutter app, deployment.
+- Known: deleting an exercise that is used in a program returns 500 (Prisma P2003). Return 409 when building the programs API.
