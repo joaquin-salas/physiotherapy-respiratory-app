@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { programsKey } from '@/features/programs/programs.hooks';
 import {
   patientsApi,
   type PatientInput,
@@ -42,7 +43,11 @@ export function useDischargePatient(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => patientsApi.discharge(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: patientsKey }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: patientsKey });
+      // Ending the follow-up also ends the active program
+      await queryClient.invalidateQueries({ queryKey: programsKey });
+    },
   });
 }
 

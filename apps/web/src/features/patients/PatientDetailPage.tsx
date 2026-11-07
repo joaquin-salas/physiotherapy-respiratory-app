@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/features/auth/auth.hooks';
+import { PatientProgramSection } from '@/features/programs/PatientProgramSection';
 import { ApiError } from '@/lib/api-client';
 import type { Patient } from './patients.api';
 import {
@@ -25,7 +26,7 @@ import {
 import { ageFromBirthDate, formatDate, sexLabels } from './patients.labels';
 import { PatientFormDialog } from './PatientFormDialog';
 
-/** Patient record: personal and clinical data, edit and discharge. */
+/** Patient record: exercise program, personal and clinical data, edit and discharge. */
 export function PatientDetailPage() {
   const { id = '' } = useParams();
   const { data: patient, isPending, isError, error, refetch } = usePatient(id);
@@ -122,6 +123,8 @@ function PatientDetail({ patient }: { patient: Patient }) {
           </InfoRow>
         </Section>
       </div>
+
+      <PatientProgramSection patient={patient} />
 
       <Section title="Valoración inicial">
         {patient.initialAssessment ? (
