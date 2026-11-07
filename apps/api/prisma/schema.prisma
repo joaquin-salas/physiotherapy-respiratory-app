@@ -40,23 +40,73 @@ model Exercise {
   programExercises ProgramExercise[]
 }
 
+// ─── Authentication ──────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  PHYSIO
+  PATIENT
+}
+
+/// A login account. Profile data lives in Physiotherapist / Patient.
+/// Physios and admins log in with email + password; patients pair a device with a QR code.
+model User {
+  id           String    @id @default(uuid())
+  role         UserRole
+  email        String?   @unique // stored lowercase; null for patients
+  passwordHash String? // argon2 hash; null for patients
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  physiotherapist Physiotherapist?
+  patient         Patient?
+  sessions        Session[]
+}
+
+/// WEB = physio panel (cookie), DEVICE = patient app (Bearer header)
+enum SessionKind {
+  WEB
+  DEVICE
+}
+
+/// A logged-in browser or device. Only the SHA-256 hash of the token is stored.
+model Session {
+  id         String      @id @default(uuid())
+  userId     String
+  tokenHash  String      @unique
+  kind       SessionKind
+  deviceName String?
+  expiresAt  DateTime
+  lastUsedAt DateTime    @default(now())
+  revokedAt  DateTime? // set on logout or when a device is unlinked
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 // ─── People ──────────────────────────────────────────────────────────
-// Login credentials will live in a separate User table (auth task).
 
 /// A physiotherapist who manages their own patients
 model Physiotherapist {
   id            String   @id @default(uuid())
+  userId        String   @unique
   fullName      String
   licenseNumber String?  @unique // professional registration number
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  user     User      @relation(fields: [userId], references: [id])
   patients Patient[]
 }
 
 /// A patient's clinical profile. No identifying data here (see PatientIdentity).
 model Patient {
   id                String   @id @default(uuid())
+  userId            String   @unique
   physiotherapistId String
   diagnosis         String
   stage             String?
@@ -66,6 +116,7 @@ model Patient {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  user            User             @relation(fields: [userId], references: [id])
   physiotherapist Physiotherapist  @relation(fields: [physiotherapistId], references: [id])
   identity        PatientIdentity?
   programs        Program[]

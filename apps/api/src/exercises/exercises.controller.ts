@@ -8,10 +8,13 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Roles } from '../auth/auth.decorators.js';
+import { UserRole } from '../generated/prisma/client.js';
 import { CreateExerciseDto } from './dto/create-exercise.dto.js';
 import { UpdateExerciseDto } from './dto/update-exercise.dto.js';
 import { ExercisesService } from './exercises.service.js';
 
+@Roles(UserRole.PHYSIO, UserRole.ADMIN) // the exercise library is managed from the panel
 @Controller('exercises')
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
