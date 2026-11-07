@@ -8,15 +8,19 @@ import type { AuthUser } from '../auth/auth.decorators.js';
 import { Prisma, ProgramStatus } from '../generated/prisma/client.js';
 import { PatientsService } from '../patients/patients.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { RoutineExerciseDto } from './dto/routine-exercise.dto.js';
 import { RoutineDto } from './dto/routine.dto.js';
 import { SaveProgramDto } from './dto/save-program.dto.js';
+import {
+  exerciseLineData,
+  validateExerciseLines,
+} from './routine-exercises.js';
 
 /** What every program response includes: routines in order, each with its exercises in order */
 const programInclude = {
   routines: {
     orderBy: { order: 'asc' },
     include: {
+      template: { select: { id: true, name: true } }, // "based on…"
       exercises: {
         orderBy: { order: 'asc' },
         include: {
@@ -82,7 +86,7 @@ export class ProgramsService {
           routines: {
             create: dto.routines.map((routine, index) => ({
               ...routineData(routine, index),
-              exercises: { create: routine.exercises.map(lineData) },
+              exercises: { create: routine.exercises.map(exerciseLineData) },
             })),
           },
         },
@@ -118,7 +122,7 @@ export class ProgramsService {
             data: {
               ...routineData(routine, index),
               programId: id,
-              exercises: { create: routine.exercises.map(lineData) },
+              exercises: { create: routine.exercises.map(exerciseLineData) },
             },
           });
           continue;
@@ -138,11 +142,14 @@ export class ProgramsService {
           if (line.id) {
             await tx.routineExercise.update({
               where: { id: line.id },
-              data: lineData(line, lineIndex),
+              data: exerciseLineData(line, lineIndex),
             });
           } else {
             await tx.routineExercise.create({
-              data: { ...lineData(line, lineIndex), routineId: routine.id },
+              data: {
+                ...exerciseLineData(line, lineIndex),
+                routineId: routine.id,
+              },
             });
           }
         }
@@ -166,8 +173,8 @@ export class ProgramsService {
   }
 
   /**
-   * Checks what class-validator can't: no day in two routines, reps XOR duration,
-   * and that every exercise exists.
+   * Checks what class-validator can't: no day in two routines, the exercise-line
+   * rules, and that the templates routines were loaded from exist.
    */
   private async validateContent(routines: RoutineDto[]) {
     const seenDays = new Set<string>();
@@ -182,27 +189,22 @@ export class ProgramsService {
       }
     }
 
-    routines.forEach((routine, r) =>
-      routine.exercises.forEach((line, l) => {
-        const hasReps = line.reps !== undefined && line.reps !== null;
-        const hasDuration =
-          line.durationSec !== undefined && line.durationSec !== null;
-        if (hasReps === hasDuration) {
-          throw new BadRequestException(
-            `routines.${r}.exercises.${l}: set either reps or durationSec (exactly one)`,
-          );
-        }
-      }),
+    await validateExerciseLines(
+      this.prisma,
+      routines.map((routine, index) => ({
+        label: `routines.${index}.exercises`,
+        lines: routine.exercises,
+      })),
     );
 
-    const exerciseIds = [
-      ...new Set(routines.flatMap((r) => r.exercises.map((l) => l.exerciseId))),
+    const templateIds = [
+      ...new Set(routines.flatMap((r) => (r.templateId ? [r.templateId] : []))),
     ];
-    const found = await this.prisma.exercise.count({
-      where: { id: { in: exerciseIds } },
+    const foundTemplates = await this.prisma.routineTemplate.count({
+      where: { id: { in: templateIds } },
     });
-    if (found !== exerciseIds.length) {
-      throw new BadRequestException('Some exercises do not exist');
+    if (foundTemplates !== templateIds.length) {
+      throw new BadRequestException('Some routine templates do not exist');
     }
   }
 
@@ -242,19 +244,6 @@ function routineData(routine: RoutineDto, index: number) {
     name: routine.name.trim(),
     order: index + 1,
     daysOfWeek: routine.daysOfWeek,
-  };
-}
-
-/** Database fields of one exercise line. `order` comes from its position (1, 2, 3…). */
-function lineData(line: RoutineExerciseDto, index: number) {
-  return {
-    exerciseId: line.exerciseId,
-    order: index + 1,
-    sets: line.sets,
-    reps: line.reps ?? null,
-    durationSec: line.durationSec ?? null,
-    restSec: line.restSec,
-    targetEffortPct: line.targetEffortPct ?? null,
-    notes: line.notes?.trim() || null,
+    templateId: routine.templateId ?? null,
   };
 }

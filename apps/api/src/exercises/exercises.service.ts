@@ -38,13 +38,13 @@ export class ExercisesService {
     try {
       return await this.prisma.exercise.delete({ where: { id } });
     } catch (error) {
-      // P2003 = foreign key violation: the exercise is used in a program
+      // P2003 = foreign key violation: the exercise is used in a program or a template
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
         throw new ConflictException(
-          'This exercise is used in a program and cannot be deleted',
+          'This exercise is used in a program or a routine template and cannot be deleted',
         );
       }
       throw this.notFoundOr(error, id);

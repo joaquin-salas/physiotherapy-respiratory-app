@@ -22,6 +22,11 @@ export class RoutineDto {
   @IsUUID()
   id?: string;
 
+  /** The template this routine was loaded from (null/absent = built by hand) */
+  @IsOptional()
+  @IsUUID()
+  templateId?: string | null;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)

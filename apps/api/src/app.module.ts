@@ -5,6 +5,7 @@ import { PatientsModule } from './patients/patients.module.js';
 import { PhysiotherapistsModule } from './physiotherapists/physiotherapists.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ProgramsModule } from './programs/programs.module.js';
+import { RoutineTemplatesModule } from './routine-templates/routine-templates.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ProgramsModule } from './programs/programs.module.js';
     PatientsModule,
     PhysiotherapistsModule,
     ProgramsModule,
+    RoutineTemplatesModule,
   ],
 })
 export class AppModule {}

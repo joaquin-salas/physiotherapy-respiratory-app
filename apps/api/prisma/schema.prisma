@@ -37,7 +37,8 @@ model Exercise {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  routineExercises RoutineExercise[]
+  routineExercises         RoutineExercise[]
+  routineTemplateExercises RoutineTemplateExercise[]
 }
 
 // ─── Authentication ──────────────────────────────────────────────────
@@ -198,6 +199,7 @@ model Program {
 model Routine {
   id         String    @id @default(uuid())
   programId  String
+  templateId String? // the template it was loaded from, if any (kept for traceability)
   name       String
   order      Int // 1, 2… (display order)
   daysOfWeek Weekday[]
@@ -205,9 +207,50 @@ model Routine {
   updatedAt  DateTime  @updatedAt
 
   program   Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  template  RoutineTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   exercises RoutineExercise[]
 
   @@index([programId])
+  @@index([templateId])
+}
+
+// ─── Routine templates ───────────────────────────────────────────────
+
+/// A pre-established routine in the shared library (any physio can create, edit or delete it).
+/// Loading it into a program copies its exercises; later changes to the template don't affect programs.
+/// No days: the physio chooses them per patient.
+model RoutineTemplate {
+  id          String          @id @default(uuid())
+  name        String
+  profile     ProgramProfile?
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  exercises RoutineTemplateExercise[]
+  routines  Routine[]
+}
+
+/// One exercise of a routine template (same prescription fields as RoutineExercise)
+model RoutineTemplateExercise {
+  id              String   @id @default(uuid())
+  templateId      String
+  exerciseId      String
+  order           Int
+  sets            Int
+  reps            Int?
+  durationSec     Int?
+  restSec         Int
+  targetEffortPct Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  template RoutineTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  exercise Exercise        @relation(fields: [exerciseId], references: [id])
+
+  @@index([templateId])
+  @@index([exerciseId])
 }
 
 /// One exercise inside a routine, with its prescription
