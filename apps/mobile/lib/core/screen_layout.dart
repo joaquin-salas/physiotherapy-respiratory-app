@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// The layout every simple screen shares: a title, some content, and the
-/// buttons at the bottom where thumbs reach them. Scrolls if the system font
-/// size is very large, so nothing gets cut off.
+/// buttons at the bottom where thumbs reach them. The buttons stay visible
+/// all the time; only the content scrolls if it doesn't fit (long text, very
+/// large system font), so nothing gets cut off.
 class ScreenLayout extends StatelessWidget {
   const ScreenLayout({
     super.key,
@@ -10,6 +11,7 @@ class ScreenLayout extends StatelessWidget {
     required this.body,
     this.buttons = const [],
     this.showBack = false,
+    this.onExit,
   });
 
   final String title;
@@ -19,10 +21,23 @@ class ScreenLayout extends StatelessWidget {
   /// Shows a "Volver" bar at the top (for screens opened from another one)
   final bool showBack;
 
+  /// Shows a "Salir" bar at the top that calls this (e.g. to leave the workout)
+  final VoidCallback? onExit;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: showBack
+      appBar: onExit != null
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              titleSpacing: 8,
+              title: TextButton.icon(
+                icon: const Icon(Icons.close, size: 28),
+                label: const Text('Salir', style: TextStyle(fontSize: 22)),
+                onPressed: onExit,
+              ),
+            )
+          : showBack
           ? AppBar(
               leading: const BackButton(),
               title: const Text('Volver'),
@@ -30,21 +45,17 @@ class ScreenLayout extends StatelessWidget {
             )
           : null,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 600, // readable line length on tablets
-                  // At least the screen's height, so the buttons sit at the bottom
-                  minHeight: constraints.maxHeight - 48,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Column(
+        child: Center(
+          child: ConstrainedBox(
+            // Readable line length on tablets
+            constraints: const BoxConstraints(maxWidth: 600 + 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
@@ -53,10 +64,14 @@ class ScreenLayout extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         ...body,
-                        const SizedBox(height: 32),
                       ],
                     ),
-                    Column(
+                  ),
+                ),
+                if (buttons.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         for (final button in buttons) ...[
@@ -65,9 +80,8 @@ class ScreenLayout extends StatelessWidget {
                         ],
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
             ),
           ),
         ),

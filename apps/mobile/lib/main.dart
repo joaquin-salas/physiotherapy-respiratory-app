@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme.dart';
 import 'core/token_storage.dart';
-import 'features/home/home_screen.dart';
+import 'features/today/today_screen.dart';
 import 'features/pairing/welcome_screen.dart';
 
 void main() {
@@ -51,7 +51,7 @@ class _StartScreenState extends State<StartScreen> {
         }
         return snapshot.data == null
             ? const WelcomeScreen()
-            : const HomeScreen();
+            : const TodayScreen();
       },
     );
   }

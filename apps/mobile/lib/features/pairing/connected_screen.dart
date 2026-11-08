@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/screen_layout.dart';
-import '../home/home_screen.dart';
+import '../today/today_screen.dart';
 
 /// Shown once, right after pairing succeeds
 class ConnectedScreen extends StatelessWidget {
@@ -27,7 +27,7 @@ class ConnectedScreen extends StatelessWidget {
         FilledButton(
           child: const Text('Empezar'),
           onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const TodayScreen()),
             (_) => false,
           ),
         ),
