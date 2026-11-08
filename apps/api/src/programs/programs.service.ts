@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -33,6 +34,46 @@ const programInclude = {
   },
 } satisfies Prisma.ProgramInclude;
 
+/**
+ * What the patient app gets: only what it needs to run the workout.
+ * No internal fields (template, contraindications, timestamps).
+ */
+const patientProgramSelect = {
+  id: true,
+  name: true,
+  startDate: true,
+  routines: {
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      daysOfWeek: true,
+      exercises: {
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          order: true,
+          sets: true,
+          reps: true,
+          durationSec: true,
+          restSec: true,
+          targetEffortPct: true,
+          notes: true,
+          exercise: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              videoUrl: true,
+              equipment: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.ProgramSelect;
+
 @Injectable()
 export class ProgramsService {
   constructor(
@@ -51,6 +92,15 @@ export class ProgramsService {
         { startDate: 'desc' },
         { createdAt: 'desc' },
       ],
+    });
+  }
+
+  /** Patient app: the logged-in patient's active program, or null */
+  findActiveForPatient(user: AuthUser) {
+    if (!user.patientId) throw new ForbiddenException();
+    return this.prisma.program.findFirst({
+      where: { patientId: user.patientId, status: ProgramStatus.ACTIVE },
+      select: patientProgramSelect,
     });
   }
 
