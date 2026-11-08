@@ -56,6 +56,11 @@ Use these; don't add alternatives for the same job.
 | Server data in the web | TanStack Query |
 | Forms | React Hook Form + Zod (`@hookform/resolvers`) |
 | UI components | shadcn/ui (Radix base) + Tailwind CSS v4, icons from `lucide-react` |
+| QR codes in the web | `qrcode.react` (drawn in the browser; never an online QR generator) |
+| Mobile HTTP | `http` package, only through `lib/core/api_client.dart` |
+| Mobile token storage | `flutter_secure_storage` (Android Keystore / iOS Keychain) |
+| Mobile QR scanning | `flutter_zxing` (ZXing C++ on the phone, no Google ML Kit, nothing sent anywhere), only in `scan_screen.dart` |
+| Mobile state / navigation | plain `setState` + `Navigator` for now (no state-management or router package chosen yet) |
 
 ## Commands (run from the repo root)
 
@@ -90,7 +95,13 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   the Kotlin package folder under `android/app/src/main/kotlin/`) and `ios/Runner.xcodeproj/project.pbxproj`
   (`PRODUCT_BUNDLE_IDENTIFIER`).
 - Dart package name `respira_app` (imports: `package:respira_app/...`). Platforms: Android and iOS only.
-  iOS builds need a Mac with Xcode; on Windows, develop and test on Android.
+  iOS builds need a Mac with Xcode; on Windows, develop and test on Android. App name shown to patients: "Respira"
+  (placeholder; also `PATIENT_APP_NAME` in the web's `devices.labels.ts`).
+- Structure: `lib/core/` (config, `api_client.dart`, `token_storage.dart`, `theme.dart`, `screen_layout.dart`) and
+  `lib/features/<feature>/` mirroring the API (`pairing/`, `home/`). Large text and buttons come from `appTheme`;
+  simple screens use `ScreenLayout` (title, content, buttons at the bottom). UI text in Spanish, `usted` form.
+- API URL: `--dart-define=API_URL=...`; default `http://10.0.2.2:3000/api` = the API on this PC seen from the
+  emulator. Plain http is allowed only in debug builds (`android/app/src/debug/AndroidManifest.xml`).
 - Telemetry is off on the dev machine: Flutter and Dart (`--disable-analytics`), Android Studio/emulator
   (declined in the setup wizard, `~/.android/analytics.settings` → `hasOptedIn: false`), VS Code
   (`telemetry.telemetryLevel: off`). Google's new Android CLI (used behind the deprecated `sdkmanager`) has no
@@ -120,8 +131,20 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   (later): `Authorization: Bearer <token>`. `AuthGuard` accepts both.
 - **Every route requires login by default** (global `AuthGuard`). Use `@Public()` to open one, `@Roles(...)`
   to restrict by role, and `@CurrentUser()` to get `{ userId, role, physiotherapistId, patientId }`.
-- No public sign-up: panel accounts are created with `user:create`. Patients will pair a device with a QR code.
+- No public sign-up: panel accounts are created with `user:create`. Patients pair a device with a QR code.
 - Web: `RequireAuth` guards pages; any 401 sets the current user to `null` and redirects to `/login`.
+- **Patient pairing (printed connection sheet).** The physio prints a "hoja de conexión" from the patient record
+  (`POST /patients/:id/pairing-code`, `devices/` module); it goes in the equipment bag the patient takes home. No
+  name or personal data on the sheet. It has a QR (`respira://pair?code=K7QM4XPT9W`) and the same code to type
+  (`K7QM4-XPT9W`). Code rules (`auth/pairing-code.ts`, mirrored in the app's `pairing_code.dart`): 10 characters
+  without lookalikes (0/O, 1/I/L), valid **30 days**, **single use**, only its SHA-256 hash stored on
+  `User.pairingCodeHash`; a new sheet replaces the previous code; discharge cancels it. The code is only returned once,
+  so the panel shows it in a preview dialog with "Imprimir hoja de conexión" (print CSS prints only `.print-only`).
+- The app redeems it with `POST /auth/pair` (`@Public`, 5 attempts/min per IP, same error for every bad code) and gets
+  a `DEVICE` session: expires after **90 days without use** (each use pushes it forward). **One device per patient**:
+  pairing revokes the previous device. The physio sees the device (`GET /patients/:id/device`) and can disconnect it
+  (`DELETE`). When the app gets a 401 it deletes its token and goes back to the welcome screen.
+- No fingerprint/face unlock in the app for now (decided; may come later).
 
 ## Gotchas (each of these has already cost time)
 
@@ -153,6 +176,18 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   Gradle's auto-install fails ("Package ndk not found") because `sdkmanager` now delegates to the new Android CLI.
   Install it from Android Studio → SDK Manager → SDK Tools → Show Package Details → NDK (Side by side).
   The first `flutter run` takes several minutes (Gradle downloads); later runs are fast.
+- **The first build after adding a native plugin can take ~15 min** with no output (Gradle installs SDK platforms and
+  CMake 3.22.1 for `flutter_zxing`'s C++, then compiles it). It isn't stuck; later builds take ~30 s.
+- **`flutter_zxing` 3.1.0 draws its scan box relative to the screen's corner**, not its own. Keep `ReaderWidget`
+  wrapped in a `RepaintBoundary` (see `scan_screen.dart`) or the box appears shifted.
+- **The scanner reads the same QR many times per second.** `scan_screen.dart` never resends a code the API refused
+  and waits 60 s after a 429; without that the app hits (and keeps itself inside) the pairing rate limit.
+- **Testing QR scanning on the emulator:** the tablet AVD's back camera is a virtual 3D room. Start it with
+  `emulator -avd Medium_Tablet -virtualscene-poster wall=<qr.png>`, or swap the image live with
+  `adb emu virtualscene-image wall <file>`, then walk the camera there with
+  `adb emu automation play <sdk>\emulator\resources\macros\Walk_to_image_room`. Put the QR small in a white image
+  (~30 % wide), otherwise it's too close to read.
+- e2e tests that call `POST /auth/pair` more than 5 times override `ThrottlerGuard` (see `devices.e2e-spec.ts`).
 
 ## Current status
 
@@ -174,7 +209,8 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   plantilla" in the program builder **copies** the lines into a routine and sets `Routine.templateId`
   (SetNull when the template is deleted). Exercise-line rules shared in `programs/routine-exercises.ts` (API)
   and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). "Plantillas" page in the panel.
-- Flutter app: project created with `flutter create` (still the template counter app). State management,
-  routing and HTTP client not chosen yet.
-- Not done: "Guardar como plantilla" from a patient's routine, patient device pairing (QR), workout logging
-  models, access log, Flutter app screens, deployment.
+- Patient device pairing (see Authentication): API (`devices/` module + `POST /auth/pair`), panel ("App del paciente"
+  section in the patient record, sheet preview + print, disconnect) and app (welcome → scan or type the code →
+  "¡Listo!" → placeholder home "Hoy"). Tested end to end on the emulator.
+- Not done: "Guardar como plantilla" from a patient's routine, workout logging models, the app's real screens
+  (today's workout), access log, deployment, testing the scanner on a real (low-end) phone.
