@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Talk to the API -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Scan the QR on the connection sheet -->
+    <uses-permission android:name="android.permission.CAMERA"/>
     <application
-        android:label="respira_app"
+        android:label="Respira"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
