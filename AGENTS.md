@@ -98,8 +98,19 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   iOS builds need a Mac with Xcode; on Windows, develop and test on Android. App name shown to patients: "Respira"
   (placeholder; also `PATIENT_APP_NAME` in the web's `devices.labels.ts`).
 - Structure: `lib/core/` (config, `api_client.dart`, `token_storage.dart`, `theme.dart`, `screen_layout.dart`) and
-  `lib/features/<feature>/` mirroring the API (`pairing/`, `home/`). Large text and buttons come from `appTheme`;
-  simple screens use `ScreenLayout` (title, content, buttons at the bottom). UI text in Spanish, `usted` form.
+  `lib/features/<feature>/` mirroring the API (`pairing/`, `today/`, `workout/`). Inside a feature, three kinds of
+  files with dependencies going one way only: **screens/widgets** → **logic** (plain Dart, no Flutter or HTTP, unit
+  tested: `todays_routine.dart`, `workout_steps.dart`) → **data** (models with `fromJson` + `*_api.dart` calls via
+  `ApiClient`). Large text and buttons come from `appTheme`; screens use `ScreenLayout` (title, scrolling content,
+  buttons **pinned at the bottom** so they're always visible). UI text in Spanish, `usted` form.
+- Patient routes in the API live under `/me/...` with `@Roles(PATIENT)` and take the patient from the session token,
+  never from the URL. `GET /me/program` returns `{ program: null | {...} }` with only the fields the app needs.
+- Workout flow: `TodayScreen` (no program / rest day / "Empezar"; picks today's routine with the **phone's date**,
+  reloads when the app returns to the foreground) → `WorkoutScreen`, **one screen** that walks a list of steps built
+  from the routine (safety check → each set with its rest → effort 0–10 → breathlessness 0–10 → "¡Muy bien!"), so
+  the back button asks "¿Quiere dejar el entreno?" instead of jumping between steps. The check-in questions are a
+  constant in `check_in_questions.dart` for now (must become data). **Nothing is saved yet** and a risky check-in
+  answer blocks training but doesn't alert the physio yet: both come with the workout log.
 - API URL: `--dart-define=API_URL=...`; default `http://10.0.2.2:3000/api` = the API on this PC seen from the
   emulator. Plain http is allowed only in debug builds (`android/app/src/debug/AndroidManifest.xml`).
 - Telemetry is off on the dev machine: Flutter and Dart (`--disable-analytics`), Android Studio/emulator
@@ -188,6 +199,11 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   `adb emu automation play <sdk>\emulator\resources\macros\Walk_to_image_room`. Put the QR small in a white image
   (~30 % wide), otherwise it's too close to read.
 - e2e tests that call `POST /auth/pair` more than 5 times override `ThrottlerGuard` (see `devices.e2e-spec.ts`).
+- **Testing on a real phone (USB):** enable USB debugging, then `adb reverse tcp:3000 tcp:3000` (again after
+  replugging) and `flutter run -d <serial> --dart-define=API_URL=http://localhost:3000/api`. `adb -s` needs the
+  serial from `adb devices` (e.g. `00277361P000310`), not the model name Flutter shows (`A069`).
+- **adb from Git Bash rewrites device paths** (`/sdcard/...` → `C:/Program Files/Git/sdcard/...`). Prefix with
+  `MSYS_NO_PATHCONV=1` or use PowerShell.
 
 ## Current status
 
@@ -211,6 +227,9 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). "Plantillas" page in the panel.
 - Patient device pairing (see Authentication): API (`devices/` module + `POST /auth/pair`), panel ("App del paciente"
   section in the patient record, sheet preview + print, disconnect) and app (welcome → scan or type the code →
-  "¡Listo!" → placeholder home "Hoy"). Tested end to end on the emulator.
-- Not done: "Guardar como plantilla" from a patient's routine, workout logging models, the app's real screens
-  (today's workout), access log, deployment, testing the scanner on a real (low-end) phone.
+  "¡Listo!"). Tested end to end on the emulator and on a real phone (Nothing Phone 4a).
+- Patient app skeleton: `GET /me/program` + home with its 3 states + the whole workout flow (see Mobile app).
+  Tested on a real phone. Videos are a placeholder (`Exercise.videoUrl` exists, no storage or player yet).
+- Not done: "Guardar como plantilla" from a patient's routine, workout logging (results, "no he podido" reasons,
+  effort, safety alerts to the physio, "ya ha entrenado hoy", streaks), check-in questions as data, exercise videos,
+  offline sessions, access log, deployment, testing the scanner on a low-end phone.
