@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/features/auth/auth.hooks';
+import { PatientAppSection } from '@/features/devices/PatientAppSection';
 import { PatientProgramSection } from '@/features/programs/PatientProgramSection';
 import { ApiError } from '@/lib/api-client';
 import type { Patient } from './patients.api';
@@ -125,6 +126,8 @@ function PatientDetail({ patient }: { patient: Patient }) {
       </div>
 
       <PatientProgramSection patient={patient} />
+
+      <PatientAppSection patient={patient} />
 
       <Section title="Valoración inicial">
         {patient.initialAssessment ? (

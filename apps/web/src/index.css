@@ -149,3 +149,20 @@
     cursor: pointer;
   }
 }
+/* Printing the patient's connection sheet (features/devices): only the element marked
+   .print-only is printed, everything else on the page (panel, dialog) is hidden. */
+.print-only {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+  body > *:not(.print-only) {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+}
