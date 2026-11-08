@@ -122,7 +122,12 @@ export class PatientsService {
       }),
       this.prisma.user.update({
         where: { id: patient.userId },
-        data: { isActive: false },
+        // An unused connection sheet stops working too
+        data: {
+          isActive: false,
+          pairingCodeHash: null,
+          pairingCodeExpiresAt: null,
+        },
       }),
       this.prisma.session.updateMany({
         where: { userId: patient.userId, revokedAt: null },

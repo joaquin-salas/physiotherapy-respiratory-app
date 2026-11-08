@@ -52,14 +52,18 @@ enum UserRole {
 /// A login account. Profile data lives in Physiotherapist / Patient.
 /// Physios and admins log in with email + password; patients pair a device with a QR code.
 model User {
-  id           String    @id @default(uuid())
-  role         UserRole
-  email        String?   @unique // stored lowercase; null for patients
-  passwordHash String? // argon2 hash; null for patients
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                   String    @id @default(uuid())
+  role                 UserRole
+  email                String?   @unique // stored lowercase; null for patients
+  passwordHash         String? // argon2 hash; null for patients
+  // Patients: one-time code printed on the connection sheet (QR). Only its SHA-256 hash is stored.
+  // Single use; a new sheet replaces the previous code.
+  pairingCodeHash      String?   @unique
+  pairingCodeExpiresAt DateTime?
+  isActive             Boolean   @default(true)
+  lastLoginAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   physiotherapist Physiotherapist?
   patient         Patient?

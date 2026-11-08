@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module.js';
+import { DevicesModule } from './devices/devices.module.js';
 import { ExercisesModule } from './exercises/exercises.module.js';
 import { PatientsModule } from './patients/patients.module.js';
 import { PhysiotherapistsModule } from './physiotherapists/physiotherapists.module.js';
@@ -11,6 +12,7 @@ import { RoutineTemplatesModule } from './routine-templates/routine-templates.mo
   imports: [
     PrismaModule,
     AuthModule,
+    DevicesModule,
     ExercisesModule,
     PatientsModule,
     PhysiotherapistsModule,

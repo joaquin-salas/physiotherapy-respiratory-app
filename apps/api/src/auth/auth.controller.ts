@@ -14,6 +14,7 @@ import { CurrentUser, Public } from './auth.decorators.js';
 import type { AuthUser } from './auth.decorators.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { PairDeviceDto } from './dto/pair-device.dto.js';
 
 const cookieOptions: CookieOptions = {
   httpOnly: true, // JavaScript in the page can't read it
@@ -40,6 +41,15 @@ export class AuthController {
     );
     res.cookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
     return this.authService.getMe(userId);
+  }
+
+  /** Patient app: exchange the code from the connection sheet for a token (sent back as Bearer) */
+  @Public()
+  @UseGuards(ThrottlerGuard) // max 5 attempts per minute per IP
+  @Post('pair') // POST /auth/pair
+  @HttpCode(200)
+  pair(@Body() dto: PairDeviceDto) {
+    return this.authService.pair(dto.code, dto.deviceName);
   }
 
   @Post('logout') // POST /auth/logout
