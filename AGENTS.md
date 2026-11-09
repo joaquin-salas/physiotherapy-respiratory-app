@@ -132,6 +132,11 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
 - Web API types are written by hand from the Prisma schema/DTOs. Keep them in sync.
 - Add shadcn components with `pnpm dlx shadcn@latest add <name>` (run in `apps/web`); they land in `src/components/ui/`.
 - Use the `@/` import alias in the web app.
+- **Panel look (custom brand, not default shadcn):** colors, font (Figtree, self-hosted via fontsource, never
+  Google Fonts CDN) and radius live as tokens in `src/index.css`; use token classes (`bg-primary`, `text-warning`…),
+  not raw hex. Pages start with `PageHeader`; statuses use `StatusMarker` (small squares: `ok`/`off`/`action`).
+  Tables are ruled with no card box, tabs are underlined, controls ≥40px tall (tablets). New shadcn components must
+  be restyled to match. Reference mockup: board "D · Combinada" in https://claude.ai/artifact/D36VSGeBgAkNPpzrJAQD1u.
 - **Conventional Commits** with scopes: `feat(api): ...`, `fix(web): ...`, `chore: ...`. Commit only when asked.
 
 ## Authentication
