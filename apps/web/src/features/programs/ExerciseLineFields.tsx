@@ -8,6 +8,7 @@ import {
   type Path,
   type UseFormRegister,
 } from 'react-hook-form';
+import { NumberInput } from '@/components/number-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -19,20 +20,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Exercise } from '@/features/exercises/exercises.api';
-import type { LineValues } from './exercise-line.schema';
+import { cn } from '@/lib/utils';
+import { AMOUNT_LIMITS, type LineValues } from './exercise-line.schema';
 import { EFFORT_OPTIONS } from './programs.labels';
 
 interface ExerciseLineFieldsProps<T extends FieldValues> {
   /** Where this line lives in the form, e.g. "routines.0.exercises.2" or "exercises.2" */
   basePath: string;
-  index: number;
-  total: number;
+  /** Position and row actions; leave them out when the line is edited on its own (a dialog) */
+  index?: number;
+  total?: number;
   control: Control<T>;
   register: UseFormRegister<T>;
   errors?: FieldErrors<LineValues>;
   exercises: Exercise[]; // the library, to choose from
-  onMove: (to: number) => void;
-  onRemove: () => void;
+  onMove?: (to: number) => void;
+  onRemove?: () => void;
 }
 
 /** Radix Select doesn't allow an empty value, so "not set" uses this placeholder value */
@@ -44,8 +47,8 @@ const NO_EFFORT = 'none';
  */
 export function ExerciseLineFields<T extends FieldValues>({
   basePath,
-  index,
-  total,
+  index = 0,
+  total = 1,
   control,
   register,
   errors,
@@ -56,17 +59,28 @@ export function ExerciseLineFields<T extends FieldValues>({
   const p = (field: keyof LineValues) => `${basePath}.${field}` as Path<T>;
   const mode = useWatch({ control, name: p('mode') }) as LineValues['mode'];
   const id = (field: string) => `${basePath.replaceAll('.', '-')}-${field}`;
+  const hasRowActions = !!onMove && !!onRemove;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border p-4">
+    <div
+      className={cn(
+        'flex flex-col gap-4',
+        hasRowActions && 'rounded-lg border p-4',
+      )}
+    >
       <div className="flex items-start gap-2">
-        <span className="mt-1.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-          {index + 1}
-        </span>
+        {hasRowActions && (
+          <span className="mt-1.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            {index + 1}
+          </span>
+        )}
 
         <Field data-invalid={!!errors?.exerciseId} className="flex-1">
-          <FieldLabel htmlFor={id('exerciseId')} className="sr-only">
-            Ejercicio
+          <FieldLabel
+            htmlFor={id('exerciseId')}
+            className={hasRowActions ? 'sr-only' : undefined}
+          >
+            Ejercicio *
           </FieldLabel>
           <Controller
             name={p('exerciseId')}
@@ -93,49 +107,64 @@ export function ExerciseLineFields<T extends FieldValues>({
           <FieldError errors={[errors?.exerciseId]} />
         </Field>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Subir"
-          title="Subir"
-          disabled={index === 0}
-          onClick={() => onMove(index - 1)}
-        >
-          <ArrowUp />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Bajar"
-          title="Bajar"
-          disabled={index === total - 1}
-          onClick={() => onMove(index + 1)}
-        >
-          <ArrowDown />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Quitar ejercicio"
-          title="Quitar ejercicio"
-          disabled={total === 1}
-          onClick={onRemove}
-        >
-          <Trash2 />
-        </Button>
+        {hasRowActions && (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Subir"
+              title="Subir"
+              disabled={index === 0}
+              onClick={() => onMove?.(index - 1)}
+            >
+              <ArrowUp />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Bajar"
+              title="Bajar"
+              disabled={index === total - 1}
+              onClick={() => onMove?.(index + 1)}
+            >
+              <ArrowDown />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Quitar ejercicio"
+              title="Quitar ejercicio"
+              disabled={total === 1}
+              onClick={onRemove}
+            >
+              <Trash2 />
+            </Button>
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      {/* Series only holds 1–20, so it gets a narrow column and the others more room */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-[5.5rem_repeat(4,minmax(0,1fr))]">
         <Field data-invalid={!!errors?.sets}>
           <FieldLabel htmlFor={id('sets')}>Series</FieldLabel>
-          <Input
-            id={id('sets')}
-            inputMode="numeric"
-            aria-invalid={!!errors?.sets}
-            {...register(p('sets'))}
+          <Controller
+            name={p('sets')}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                id={id('sets')}
+                min={1}
+                max={20}
+                aria-invalid={!!errors?.sets}
+                value={field.value as string}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
           <FieldError errors={[errors?.sets]} />
         </Field>
@@ -163,22 +192,44 @@ export function ExerciseLineFields<T extends FieldValues>({
           <FieldLabel htmlFor={id('amount')}>
             {mode === 'reps' ? 'Repeticiones' : 'Segundos'}
           </FieldLabel>
-          <Input
-            id={id('amount')}
-            inputMode="numeric"
-            aria-invalid={!!errors?.amount}
-            {...register(p('amount'))}
+          <Controller
+            name={p('amount')}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                id={id('amount')}
+                min={AMOUNT_LIMITS[mode].min}
+                max={AMOUNT_LIMITS[mode].max}
+                step={mode === 'reps' ? 1 : 5}
+                aria-invalid={!!errors?.amount}
+                value={field.value as string}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
           <FieldError errors={[errors?.amount]} />
         </Field>
 
         <Field data-invalid={!!errors?.restSec}>
           <FieldLabel htmlFor={id('restSec')}>Descanso (s)</FieldLabel>
-          <Input
-            id={id('restSec')}
-            inputMode="numeric"
-            aria-invalid={!!errors?.restSec}
-            {...register(p('restSec'))}
+          <Controller
+            name={p('restSec')}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                id={id('restSec')}
+                min={0}
+                max={600}
+                step={5}
+                aria-invalid={!!errors?.restSec}
+                value={field.value as string}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
           <FieldError errors={[errors?.restSec]} />
         </Field>

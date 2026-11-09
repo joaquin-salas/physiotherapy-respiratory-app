@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  emptyLine,
   lineSchema,
   toLineInput,
   toLineValues,
@@ -65,7 +64,7 @@ export function emptyRoutine(
   return {
     name: routineName(index),
     daysOfWeek: suggested.filter((day) => !takenDays.includes(day)),
-    exercises: [emptyLine],
+    exercises: [], // added from the table's dialog or a template
   };
 }
 
