@@ -70,9 +70,12 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 p-8">
-        {/* The page that matches the current URL is rendered here */}
-        <Outlet />
+      <main className="min-w-0 flex-1 p-8">
+        {/* The page that matches the current URL, in a centered column: it fills small
+            screens and stops growing at 1280px on big ones */}
+        <div className="mx-auto w-full max-w-7xl">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
