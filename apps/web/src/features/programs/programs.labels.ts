@@ -59,6 +59,24 @@ export function formatDays(days: Weekday[]): string {
     .join(' ');
 }
 
+/**
+ * Sentence-style days: ["MONDAY","WEDNESDAY","FRIDAY"] → "Lunes, miércoles y viernes";
+ * Monday–Friday → "De lunes a viernes"; all seven → "Todos los días"
+ */
+export function formatDaysLong(days: Weekday[]): string {
+  const sorted = WEEKDAYS.filter((day) => days.includes(day));
+  if (sorted.length === WEEKDAYS.length) return 'Todos los días';
+  if (sorted.length === 5 && sorted.every((day, i) => day === WEEKDAYS[i])) {
+    return 'De lunes a viernes';
+  }
+  const names = sorted.map((day) => weekdayLong[day].toLowerCase());
+  const text =
+    names.length > 1
+      ? `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`
+      : (names[0] ?? '');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /** Choices for the target perceived effort: 10 %, 20 % … 100 % */
 export const EFFORT_OPTIONS = [
   10, 20, 30, 40, 50, 60, 70, 80, 90, 100,

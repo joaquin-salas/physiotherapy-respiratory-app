@@ -27,7 +27,8 @@ const tabsListVariants = cva(
     variants: {
       variant: {
         default: "bg-muted",
-        line: "gap-5 border-b border-border bg-transparent",
+        // No padding: the triggers must reach the list's bottom border so the active underline sits on it
+        line: "gap-5 border-b border-border bg-transparent p-0",
       },
     },
     defaultVariants: {

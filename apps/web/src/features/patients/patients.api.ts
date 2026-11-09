@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import type { Weekday } from '@/features/programs/programs.api';
 
 // Types copied by hand from the API (apps/api/prisma/schema.prisma + patients DTOs).
 // Keep them in sync when the API changes.
@@ -36,6 +37,12 @@ export interface Patient {
   physiotherapist: { id: string; fullName: string };
 }
 
+/** A patient in the list (GET /api/patients): the patient plus a summary for the worklist */
+export type PatientListItem = Patient & {
+  activeProgram: { name: string; days: Weekday[] } | null;
+  appConnected: boolean;
+};
+
 /** Body of POST /api/patients (and PATCH, where every field is optional). `null` clears a field. */
 export interface PatientInput {
   physiotherapistId?: string; // admins only
@@ -58,7 +65,7 @@ export interface PatientInput {
 
 export const patientsApi = {
   getAll: (status: PatientStatus) =>
-    apiClient.get<Patient[]>(`/patients?status=${status}`),
+    apiClient.get<PatientListItem[]>(`/patients?status=${status}`),
   getOne: (id: string) => apiClient.get<Patient>(`/patients/${id}`),
   create: (data: PatientInput) => apiClient.post<Patient>('/patients', data),
   update: (id: string, data: Partial<PatientInput>) =>

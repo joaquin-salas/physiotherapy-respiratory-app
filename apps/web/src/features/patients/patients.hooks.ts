@@ -9,8 +9,9 @@ import {
 /** Every patients query starts with this key, so invalidating it refreshes lists and records. */
 const patientsKey = ['patients'];
 
-export function usePatients(status: PatientStatus) {
+export function usePatients(status: PatientStatus, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: [...patientsKey, 'list', status],
     queryFn: () => patientsApi.getAll(status),
   });
