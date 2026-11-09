@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Patient } from '@/features/patients/patients.api';
 import { formatDate } from '@/features/patients/patients.labels';
-import { ConnectionSheet } from './ConnectionSheet';
+import { ConnectionSheetPreview } from './ConnectionSheetPreview';
 import type { DeviceStatus, PairingCode } from './devices.api';
 import {
   useCreatePairingCode,
@@ -171,21 +170,7 @@ function ConnectionSheetButton({
             </DialogDescription>
           </DialogHeader>
 
-          {pairing && (
-            <>
-              {/* Preview */}
-              <div className="rounded-md border shadow-sm">
-                <ConnectionSheet pairing={pairing} />
-              </div>
-              {/* The printed copy: outside the dialog, so the print styles can show only this */}
-              {createPortal(
-                <div className="print-only">
-                  <ConnectionSheet pairing={pairing} />
-                </div>,
-                document.body,
-              )}
-            </>
-          )}
+          {pairing && <ConnectionSheetPreview pairing={pairing} />}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setPairing(null)}>

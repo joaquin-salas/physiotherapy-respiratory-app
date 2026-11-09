@@ -102,7 +102,7 @@ export function toPatientFormValues(patient: Patient): PatientFormValues {
   return {
     physiotherapistId: patient.physiotherapist.id,
     fullName: patient.identity?.fullName ?? '',
-    birthDate: patient.identity?.birthDate.slice(0, 10) ?? '', // "YYYY-MM-DD" for <input type="date">
+    birthDate: patient.identity?.birthDate.slice(0, 10) ?? '', // "YYYY-MM-DD", what DateInput and the API use
     phone: patient.identity?.phone ?? '',
     nationalId: patient.identity?.nationalId ?? '',
     sex: patient.sex ?? '',

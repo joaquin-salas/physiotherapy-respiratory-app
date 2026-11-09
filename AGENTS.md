@@ -57,6 +57,7 @@ Use these; don't add alternatives for the same job.
 | Forms | React Hook Form + Zod (`@hookform/resolvers`) |
 | UI components | shadcn/ui (Radix base) + Tailwind CSS v4, icons from `lucide-react` |
 | QR codes in the web | `qrcode.react` (drawn in the browser; never an online QR generator) |
+| Drag and drop in the web | `@dnd-kit` (core + sortable + modifiers + utilities): mouse, touch (tablets) and keyboard; drag by a handle |
 | Mobile HTTP | `http` package, only through `lib/core/api_client.dart` |
 | Mobile token storage | `flutter_secure_storage` (Android Keystore / iOS Keychain) |
 | Mobile QR scanning | `flutter_zxing` (ZXing C++ on the phone, no Google ML Kit, nothing sent anywhere), only in `scan_screen.dart` |
@@ -217,6 +218,11 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   edit, discharge/reactivate). Physios see only their own patients (others → 404); ADMIN sees and edits all.
   Patients are never deleted (clinical records must be kept): they are discharged (`dischargedAt`).
   In the UI this is **"Finalizar seguimiento"**, never "dar de alta" ("alta" also means signing up in Spanish).
+- "Nuevo paciente" is a 3-step wizard (`PatientWizard.tsx`): `/patients/new` (personal + clinical data; saving
+  creates the patient) → `/patients/:id/setup?step=program` (optional, `ProgramForm` on the page) →
+  `?step=app` (optional; the pairing code is created only when the physio clicks "Preparar hoja de conexión").
+  `PatientForm` and `ProgramForm` are shared with the record's edit dialogs. Mockup: board in
+  https://claude.ai/artifact/W2xV1LkRNxDLsSLyymtkDL.
 - Patient programs: `Program` (the treatment) → 1–2 `Routine`s (a fixed session repeated on its `daysOfWeek`;
   a day belongs to at most one routine, other days are rest) → `RoutineExercise` (sets, reps **or** durationSec,
   rest, `targetEffortPct` = target perceived effort 0–100 in steps of 10, i.e. 50 % ↔ 5/10). Physios said

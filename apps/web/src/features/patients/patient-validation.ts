@@ -28,7 +28,7 @@ export function isValidNationalId(value: string): boolean {
   return CONTROL_LETTERS[Number(digits) % 23] === match[2];
 }
 
-/** Today as "YYYY-MM-DD" (the format of <input type="date">) */
+/** Today as "YYYY-MM-DD" (the format the date fields and the API use) */
 export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }

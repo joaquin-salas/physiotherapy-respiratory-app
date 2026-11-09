@@ -25,7 +25,7 @@ import {
   useReactivatePatient,
 } from './patients.hooks';
 import { ageFromBirthDate, formatDate, sexLabels } from './patients.labels';
-import { PatientFormDialog } from './PatientFormDialog';
+import { EditPatientDialog } from './EditPatientDialog';
 
 /** Patient record: exercise program, personal and clinical data, edit and discharge. */
 export function PatientDetailPage() {
@@ -62,7 +62,7 @@ function PatientDetail({ patient }: { patient: Patient }) {
   const identity = patient.identity;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <BackLink />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -80,7 +80,7 @@ function PatientDetail({ patient }: { patient: Patient }) {
           <p className="text-muted-foreground">{patient.diagnosis}</p>
         </div>
         <div className="flex gap-2">
-          <PatientFormDialog patient={patient} />
+          <EditPatientDialog patient={patient} />
           <DischargeButton patient={patient} />
         </div>
       </div>
