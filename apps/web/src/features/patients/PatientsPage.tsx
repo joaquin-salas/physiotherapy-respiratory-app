@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCurrentUser } from '@/features/auth/auth.hooks';
 import type { PatientStatus } from './patients.api';
@@ -15,17 +16,22 @@ export function PatientsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Pacientes</h1>
-          <p className="text-muted-foreground">
-            {isAdmin
-              ? 'Todos los pacientes de la plataforma.'
-              : 'Los pacientes que tienes asignados.'}
-          </p>
-        </div>
-        <PatientFormDialog />
-      </div>
+      <PageHeader
+        title="Pacientes"
+        description={
+          patients && status === 'active' ? (
+            <>
+              <strong className="text-foreground">{patients.length}</strong> en
+              seguimiento
+            </>
+          ) : isAdmin ? (
+            'Todos los pacientes de la plataforma.'
+          ) : (
+            'Los pacientes que tienes asignados.'
+          )
+        }
+        actions={<PatientFormDialog />}
+      />
 
       <Tabs
         value={status}

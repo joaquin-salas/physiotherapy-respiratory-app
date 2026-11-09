@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,16 +49,11 @@ export function RoutineTemplatesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Plantillas de rutina</h1>
-          <p className="text-muted-foreground">
-            Rutinas preestablecidas que cualquier fisioterapeuta puede cargar en
-            un programa.
-          </p>
-        </div>
-        <RoutineTemplateDialog />
-      </div>
+      <PageHeader
+        title="Plantillas de rutina"
+        description="Rutinas preestablecidas que cualquier fisioterapeuta puede cargar en un programa."
+        actions={<RoutineTemplateDialog />}
+      />
 
       <Tabs
         value={filter}

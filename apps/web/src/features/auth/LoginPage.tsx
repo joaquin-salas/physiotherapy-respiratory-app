@@ -10,6 +10,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { BrandMark } from '@/components/layout/BrandMark';
 import { ApiError } from '@/lib/api-client';
 import { useCurrentUser, useLogin } from './auth.hooks';
 
@@ -62,8 +63,11 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted p-4">
-      <div className="w-full max-w-sm rounded-xl border bg-background p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Fisio Respira</h1>
+      <div className="w-full max-w-sm rounded-lg border bg-background p-8 shadow-sm">
+        <div className="mb-2 flex items-center gap-2.5">
+          <BrandMark />
+          <h1 className="text-2xl font-bold tracking-tight">Fisio Respira</h1>
+        </div>
         <p className="mb-6 text-muted-foreground">
           Accede al panel del fisioterapeuta.
         </p>

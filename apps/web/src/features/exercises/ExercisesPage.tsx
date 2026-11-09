@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import { CreateExerciseDialog } from './CreateExerciseDialog';
 import { useExercises } from './exercises.hooks';
 import { ExercisesTable } from './ExercisesTable';
@@ -8,15 +9,11 @@ export function ExercisesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Ejercicios</h1>
-          <p className="text-muted-foreground">
-            Biblioteca de ejercicios para asignar a los pacientes.
-          </p>
-        </div>
-        <CreateExerciseDialog />
-      </div>
+      <PageHeader
+        title="Ejercicios"
+        description="Biblioteca de ejercicios para asignar a los pacientes."
+        actions={<CreateExerciseDialog />}
+      />
 
       {isPending ? (
         <p className="text-muted-foreground">Cargando ejercicios…</p>
