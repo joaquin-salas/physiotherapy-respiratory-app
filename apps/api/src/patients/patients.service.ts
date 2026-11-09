@@ -6,7 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth.decorators.js';
-import { Prisma, ProgramStatus, UserRole } from '../generated/prisma/client.js';
+import { liveDeviceSessionWhere } from '../devices/device-session.js';
+import {
+  Prisma,
+  ProgramStatus,
+  UserRole,
+  Weekday,
+} from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
 import {
@@ -25,14 +31,49 @@ const patientInclude = {
 export class PatientsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(user: AuthUser, status: 'active' | 'discharged' = 'active') {
-    return this.prisma.patient.findMany({
+  async findAll(user: AuthUser, status: 'active' | 'discharged' = 'active') {
+    const patients = await this.prisma.patient.findMany({
       where: {
         ...this.visibleTo(user),
         dischargedAt: status === 'active' ? null : { not: null },
       },
-      include: patientInclude,
+      include: {
+        ...patientInclude,
+        programs: {
+          where: { status: ProgramStatus.ACTIVE },
+          take: 1,
+          select: {
+            name: true,
+            routines: { select: { daysOfWeek: true } },
+          },
+        },
+        user: {
+          select: {
+            sessions: {
+              where: liveDeviceSessionWhere(),
+              take: 1,
+              select: { id: true },
+            },
+          },
+        },
+      },
       orderBy: { identity: { fullName: 'asc' } },
+    });
+
+    // Summary for the worklist: don't expose the raw program/sessions arrays
+    return patients.map(({ programs, user: account, ...patient }) => {
+      const program = programs[0];
+      const days = new Set(program?.routines.flatMap((r) => r.daysOfWeek));
+      return {
+        ...patient,
+        activeProgram: program
+          ? {
+              name: program.name,
+              days: Object.values(Weekday).filter((day) => days.has(day)),
+            }
+          : null,
+        appConnected: account.sessions.length > 0,
+      };
     });
   }
 

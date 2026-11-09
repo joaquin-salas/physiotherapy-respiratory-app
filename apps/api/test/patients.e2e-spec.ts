@@ -88,6 +88,12 @@ describe('Patients (e2e)', () => {
         physiotherapist: { userId: { in: userIds } },
       },
     });
+    await prisma.program.deleteMany({
+      where: { patientId: { in: patients.map((p) => p.id) } },
+    });
+    await prisma.session.deleteMany({
+      where: { userId: { in: patients.map((p) => p.userId) } },
+    });
     await prisma.patient.deleteMany({
       where: { id: { in: patients.map((p) => p.id) } },
     });
@@ -129,6 +135,59 @@ describe('Patients (e2e)', () => {
     expect(updated.body.stage).toBeNull();
     expect(updated.body.identity.phone).toBe('600000000');
     expect(updated.body.identity.fullName).toBe('Paciente Ficticio');
+  });
+
+  it('summarizes program and app connection in the list', async () => {
+    const { body } = await http()
+      .post('/api/patients')
+      .set(as(physioA.token))
+      .send({
+        ...newPatient,
+        identity: { ...newPatient.identity, nationalId: undefined },
+      })
+      .expect(201);
+    const find = async () => {
+      const list = await http()
+        .get('/api/patients')
+        .set(as(physioA.token))
+        .expect(200);
+      return list.body.find((p: { id: string }) => p.id === body.id);
+    };
+
+    expect(await find()).toMatchObject({
+      activeProgram: null,
+      appConnected: false,
+    });
+
+    await prisma.program.create({
+      data: {
+        patientId: body.id,
+        name: 'Programa ficticio',
+        routines: {
+          create: [
+            { name: 'A', order: 1, daysOfWeek: ['FRIDAY', 'MONDAY'] },
+            { name: 'B', order: 2, daysOfWeek: ['WEDNESDAY', 'MONDAY'] },
+          ],
+        },
+      },
+    });
+    await prisma.session.create({
+      data: {
+        userId: body.userId,
+        tokenHash: hashToken(generateToken()),
+        kind: 'DEVICE',
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+    });
+
+    const item = await find();
+    expect(item.activeProgram).toEqual({
+      name: 'Programa ficticio',
+      days: ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+    });
+    expect(item.appConnected).toBe(true);
+    expect(item.programs).toBeUndefined();
+    expect(item.user).toBeUndefined();
   });
 
   it("hides another physio's patients (404, not 403)", async () => {

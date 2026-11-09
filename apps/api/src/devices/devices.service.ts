@@ -4,6 +4,7 @@ import type { AuthUser } from '../auth/auth.decorators.js';
 import { generatePairingCode } from '../auth/pairing-code.js';
 import { hashToken } from '../auth/session-token.js';
 import { SessionKind } from '../generated/prisma/client.js';
+import { liveDeviceSessionWhere } from './device-session.js';
 import { PatientsService } from '../patients/patients.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -26,12 +27,7 @@ export class DevicesService {
 
     const [session, account] = await Promise.all([
       this.prisma.session.findFirst({
-        where: {
-          userId: patient.userId,
-          kind: SessionKind.DEVICE,
-          revokedAt: null,
-          expiresAt: { gt: now },
-        },
+        where: { userId: patient.userId, ...liveDeviceSessionWhere(now) },
         orderBy: { createdAt: 'desc' },
         select: { deviceName: true, createdAt: true, lastUsedAt: true },
       }),
