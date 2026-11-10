@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  emptyLine,
   lineSchema,
   toLineInput,
   toLineValues,
@@ -22,7 +21,7 @@ export const templateFormSchema = z.object({
 export type TemplateFormValues = z.infer<typeof templateFormSchema>;
 
 export function emptyTemplateForm(): TemplateFormValues {
-  return { name: '', profile: '', description: '', exercises: [emptyLine] };
+  return { name: '', profile: '', description: '', exercises: [] };
 }
 
 export function toTemplateFormValues(

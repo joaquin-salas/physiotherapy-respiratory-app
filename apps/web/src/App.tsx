@@ -9,6 +9,8 @@ import { NewPatientPage } from '@/features/patients/NewPatientPage';
 import { PatientDetailPage } from '@/features/patients/PatientDetailPage';
 import { PatientSetupPage } from '@/features/patients/PatientSetupPage';
 import { PatientsPage } from '@/features/patients/PatientsPage';
+import { NewRoutineTemplatePage } from '@/features/routine-templates/NewRoutineTemplatePage';
+import { RoutineTemplateDetailPage } from '@/features/routine-templates/RoutineTemplateDetailPage';
 import { RoutineTemplatesPage } from '@/features/routine-templates/RoutineTemplatesPage';
 
 /** All the pages of the panel. Everything except /login requires a logged-in user. */
@@ -26,6 +28,8 @@ export const router = createBrowserRouter([
           { path: 'patients/:id', element: <PatientDetailPage /> },
           { path: 'patients/:id/setup', element: <PatientSetupPage /> },
           { path: 'templates', element: <RoutineTemplatesPage /> },
+          { path: 'templates/new', element: <NewRoutineTemplatePage /> },
+          { path: 'templates/:id', element: <RoutineTemplateDetailPage /> },
           { path: 'exercises', element: <ExercisesPage /> },
           { path: 'exercises/new', element: <NewExercisePage /> },
           { path: 'exercises/:id', element: <ExerciseDetailPage /> },

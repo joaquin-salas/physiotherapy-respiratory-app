@@ -33,6 +33,8 @@ export const routineTemplatesApi = {
     apiClient.get<RoutineTemplate[]>(
       profile ? `/routine-templates?profile=${profile}` : '/routine-templates',
     ),
+  getOne: (id: string) =>
+    apiClient.get<RoutineTemplate>(`/routine-templates/${id}`),
   create: (data: SaveRoutineTemplateInput) =>
     apiClient.post<RoutineTemplate>('/routine-templates', data),
   update: (id: string, data: SaveRoutineTemplateInput) =>

@@ -17,6 +17,14 @@ export function useRoutineTemplates(profile?: ProgramProfile) {
   });
 }
 
+/** One template (detail page) */
+export function useRoutineTemplate(id: string) {
+  return useQuery({
+    queryKey: [...templatesKey, 'detail', id],
+    queryFn: () => routineTemplatesApi.getOne(id),
+  });
+}
+
 export function useCreateRoutineTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -39,7 +47,9 @@ export function useDeleteRoutineTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => routineTemplatesApi.delete(id),
-    onSuccess: async () => {
+    onSuccess: async (_data, id) => {
+      // The detail no longer exists: drop it instead of refetching it (it would 404)
+      queryClient.removeQueries({ queryKey: [...templatesKey, 'detail', id] });
       await queryClient.invalidateQueries({ queryKey: templatesKey });
       // Routines loaded from it lose their "based on" link
       await queryClient.invalidateQueries({ queryKey: programsKey });

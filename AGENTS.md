@@ -237,7 +237,10 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   all physios (anyone creates/edits/deletes; not clinical records). No days: chosen per patient. "Cargar
   plantilla" in the program builder **copies** the lines into a routine and sets `Routine.templateId`
   (SetNull when the template is deleted). Exercise-line rules shared in `programs/routine-exercises.ts` (API)
-  and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). "Plantillas" page in the panel.
+  and `programs/exercise-line.schema.ts` + `ExerciseLineFields` (web). The exercise table with drag and drop is
+  `ExerciseLinesEditor` (program builder and template form; the parent owns the `useFieldArray`) and its read-only
+  version `ExerciseLinesView`. Panel: "Plantillas" list → `/templates/:id` detail ("Editar" switches to
+  `RoutineTemplateForm`, "Eliminar") and `/templates/new` full page, laid out like the exercise pages.
 - Patient device pairing (see Authentication): API (`devices/` module + `POST /auth/pair`), panel ("App del paciente"
   section in the patient record, sheet preview + print, disconnect) and app (welcome → scan or type the code →
   "¡Listo!"). Tested end to end on the emulator and on a real phone (Nothing Phone 4a).

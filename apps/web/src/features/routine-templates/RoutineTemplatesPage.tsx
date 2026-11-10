@@ -1,16 +1,6 @@
-import { Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Link, useNavigate } from 'react-router';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,17 +18,13 @@ import {
   type ProgramProfile,
 } from '@/features/programs/programs.api';
 import { profileLabels } from '@/features/programs/programs.labels';
-import type { RoutineTemplate } from './routine-templates.api';
-import {
-  useDeleteRoutineTemplate,
-  useRoutineTemplates,
-} from './routine-templates.hooks';
-import { RoutineTemplateDialog } from './RoutineTemplateDialog';
+import { useRoutineTemplates } from './routine-templates.hooks';
 
 const ALL = 'all';
 
-/** Shared library of routine templates, filterable by profile */
+/** Shared library of routine templates, filterable by profile. Each row opens its template. */
 export function RoutineTemplatesPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<ProgramProfile | typeof ALL>(ALL);
   const {
     data: templates,
@@ -52,7 +38,14 @@ export function RoutineTemplatesPage() {
       <PageHeader
         title="Plantillas de rutina"
         description="Rutinas preestablecidas que cualquier fisioterapeuta puede cargar en un programa."
-        actions={<RoutineTemplateDialog />}
+        actions={
+          <Button className="h-11 px-4" asChild>
+            <Link to="/templates/new">
+              <Plus />
+              Nueva plantilla
+            </Link>
+          </Button>
+        }
       />
 
       <Tabs
@@ -91,14 +84,24 @@ export function RoutineTemplatesPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Perfil</TableHead>
               <TableHead>Ejercicios</TableHead>
-              <TableHead className="w-0" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {templates.map((template) => (
-              <TableRow key={template.id}>
+              <TableRow
+                key={template.id}
+                className="cursor-pointer"
+                onClick={() => navigate(`/templates/${template.id}`)}
+              >
                 <TableCell>
-                  <p className="font-medium">{template.name}</p>
+                  {/* A real link (keyboard, middle-click); the row click is a shortcut */}
+                  <Link
+                    to={`/templates/${template.id}`}
+                    className="font-medium hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {template.name}
+                  </Link>
                   {template.description && (
                     <p className="max-w-md truncate text-muted-foreground">
                       {template.description}
@@ -117,52 +120,11 @@ export function RoutineTemplatesPage() {
                 <TableCell className="max-w-sm truncate">
                   {template.exercises.map((l) => l.exercise.name).join(', ')}
                 </TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-1">
-                    <RoutineTemplateDialog template={template} />
-                    <DeleteTemplateButton template={template} />
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
     </div>
-  );
-}
-
-function DeleteTemplateButton({ template }: { template: RoutineTemplate }) {
-  const deleteTemplate = useDeleteRoutineTemplate();
-
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={deleteTemplate.isPending}
-          aria-label={`Borrar ${template.name}`}
-        >
-          <Trash2 />
-          Borrar
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Borrar «{template.name}»?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Desaparecerá de la biblioteca para todos los fisioterapeutas. Los
-            programas de los pacientes que la usaron no cambian.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={() => deleteTemplate.mutate(template.id)}>
-            Borrar plantilla
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }
