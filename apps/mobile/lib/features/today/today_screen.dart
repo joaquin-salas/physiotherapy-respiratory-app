@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
-import '../../core/screen_layout.dart';
+import '../../core/app_widgets.dart';
+import '../../core/theme.dart';
 import '../../core/token_storage.dart';
 import '../pairing/welcome_screen.dart';
 import '../workout/workout_screen.dart';
 import 'program.dart';
 import 'program_api.dart';
+import 'today_texts.dart';
 import 'todays_routine.dart';
 
-/// The home screen: no program yet / rest day / today's workout with "Empezar".
+/// The home screen: no program yet / rest day / one big "Empezar entreno" button.
 class TodayScreen extends StatefulWidget {
   const TodayScreen({
     super.key,
@@ -94,92 +96,219 @@ class _TodayScreenState extends State<TodayScreen> {
     final today = _today;
 
     if (error != null) {
-      return ScreenLayout(
-        title: 'Hoy',
-        body: [Text(error, style: textTheme.bodyLarge)],
-        buttons: [
-          FilledButton(
-            onPressed: () {
-              setState(() => _error = null);
-              _load();
-            },
-            child: const Text('Reintentar'),
-          ),
-        ],
+      return _HomeLayout(
+        now: widget.clock(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(error, style: textTheme.bodyLarge),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () {
+                setState(() => _error = null);
+                _load();
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
       );
     }
 
     return switch (today) {
       null => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      NoProgram() => ScreenLayout(
-        title: 'Hoy',
-        body: [
-          Text(
-            'Su fisioterapeuta todavía está preparando sus ejercicios. '
-            'Cuando estén listos, aparecerán aquí.',
-            style: textTheme.bodyLarge,
-          ),
-        ],
+      NoProgram() => _HomeLayout(
+        now: widget.clock(),
+        child: const _Message(
+          icon: Icons.assignment_outlined,
+          title: 'Aún no hay ejercicios',
+          text:
+              'Su fisioterapeuta está preparando su plan. '
+              'Cuando esté listo, aparecerá aquí.',
+        ),
       ),
-      RestDay(:final nextTrainingDay) => ScreenLayout(
-        title: 'Hoy toca descansar',
-        body: [
-          Icon(
-            Icons.spa,
-            size: 120,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Descansar también forma parte del tratamiento.',
-            style: textTheme.bodyLarge,
-          ),
-          if (nextTrainingDay != null) ...[
-            const SizedBox(height: 16),
+      RestDay(:final nextTrainingDay) => _HomeLayout(
+        now: widget.clock(),
+        child: _Message(
+          icon: Icons.bedtime_outlined,
+          title: 'Hoy toca descansar',
+          text: 'Descansar también forma parte del tratamiento.',
+          card: nextTrainingDay == null
+              ? null
+              : Text.rich(
+                  TextSpan(
+                    text: 'Su próximo entreno es el ',
+                    children: [
+                      TextSpan(
+                        text: weekdayNames[nextTrainingDay.weekday - 1],
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const TextSpan(text: '.'),
+                    ],
+                  ),
+                  style: textTheme.bodyLarge,
+                ),
+        ),
+      ),
+      TrainingDay(:final routine) => _HomeLayout(
+        now: widget.clock(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StartButton(onPressed: () => _start(routine)),
+            const SizedBox(height: 20),
             Text(
-              'Su próximo entreno es el ${_weekdayName(nextTrainingDay)}.',
-              style: textTheme.bodyLarge,
+              routineSummary(routine),
+              textAlign: TextAlign.center,
+              style: textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
             ),
           ],
-        ],
-      ),
-      TrainingDay(:final routine) => ScreenLayout(
-        title: 'Su entreno de hoy',
-        body: [
-          Text(
-            '${routine.exercises.length} ejercicios:',
-            style: textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 8),
-          for (final line in routine.exercises)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                '•  ${line.exercise.name}',
-                style: textTheme.bodyLarge,
-              ),
-            ),
-        ],
-        buttons: [
-          FilledButton.icon(
-            icon: const Icon(Icons.play_arrow, size: 36),
-            label: const Text('Empezar'),
-            onPressed: () => _start(routine),
-          ),
-        ],
+        ),
       ),
     };
   }
 }
 
-const _weekdayNames = [
-  'lunes',
-  'martes',
-  'miércoles',
-  'jueves',
-  'viernes',
-  'sábado',
-  'domingo',
-];
+/// Brand, greeting and date at the top; [child] fills the rest, centred.
+/// Scrolls when it doesn't fit (very large system font, phone in landscape).
+class _HomeLayout extends StatelessWidget {
+  const _HomeLayout({required this.now, required this.child});
 
-String _weekdayName(DateTime day) => _weekdayNames[day.weekday - 1];
+  final DateTime now;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640 + 48),
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: BrandMark(),
+                        ),
+                        const SizedBox(height: 28),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            greetingFor(now),
+                            style: textTheme.headlineLarge,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          longDate(now),
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Expanded(child: child),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The one big button of the home screen
+class _StartButton extends StatelessWidget {
+  const _StartButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(280),
+        padding: const EdgeInsets.all(24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        textStyle: const TextStyle(
+          fontFamily: 'Figtree',
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              size: 80,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text('Empezar entreno', textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+/// Icon, title, text and an optional card: the screens without a button
+class _Message extends StatelessWidget {
+  const _Message({
+    required this.icon,
+    required this.title,
+    required this.text,
+    this.card,
+  });
+
+  final IconData icon;
+  final String title;
+  final String text;
+  final Widget? card;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconBadge(icon: icon),
+        const SizedBox(height: 28),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 16),
+        Text(text, textAlign: TextAlign.center, style: textTheme.bodyLarge),
+        if (card != null) ...[
+          const SizedBox(height: 24),
+          InfoCard(child: card!),
+        ],
+      ],
+    );
+  }
+}

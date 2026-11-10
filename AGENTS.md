@@ -104,6 +104,15 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
   tested: `todays_routine.dart`, `workout_steps.dart`) → **data** (models with `fromJson` + `*_api.dart` calls via
   `ApiClient`). Large text and buttons come from `appTheme`; screens use `ScreenLayout` (title, scrolling content,
   buttons **pinned at the bottom** so they're always visible). UI text in Spanish, `usted` form.
+- **Patient app look** (mockup: https://claude.ai/artifact/Kuuth5AQBy7THCG9Tay717): same brand as the panel
+  (`AppColors` in `theme.dart`, Figtree bundled in `assets/fonts/`, never downloaded at runtime). Home shows only
+  greeting, date and one big "Empezar entreno" button (+ "N ejercicios · unos X minutos", `today_texts.dart`).
+  Workout screens use `ScreenLayout(onExit:, progress: StepProgress(...))` ("✕ Salir" + "Ejercicio 2 de 6" +
+  segments); shared bits in `core/app_widgets.dart`. Exercise steps switch to two columns at ≥ 840 px wide in
+  landscape. WCAG 2.2 AA: text ≥ 7:1, sizes follow the system font (test at 200 %), buttons ≥ 56 px with text,
+  timers can be paused / extended ("30 segundos más"), the countdown is announced every 10 s and vibrates at
+  the end, colour never carries meaning alone. Some texts promise what the workout log will do ("Su
+  fisioterapeuta recibirá un aviso", "se guarda"): marked `TODO(workout log)`, fine while not in production.
 - Patient routes in the API live under `/me/...` with `@Roles(PATIENT)` and take the patient from the session token,
   never from the URL. `GET /me/program` returns `{ program: null | {...} }` with only the fields the app needs.
 - Workout flow: `TodayScreen` (no program / rest day / "Empezar"; picks today's routine with the **phone's date**,

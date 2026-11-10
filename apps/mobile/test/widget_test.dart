@@ -23,7 +23,7 @@ void main() {
       await tester.pumpWidget(today(wednesday, withProgram: false));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('todavía está preparando'), findsOneWidget);
+      expect(find.text('Aún no hay ejercicios'), findsOneWidget);
       expect(find.byType(FilledButton), findsNothing);
     });
 
@@ -36,13 +36,33 @@ void main() {
       expect(find.byType(FilledButton), findsNothing);
     });
 
-    testWidgets("on a training day it lists today's exercises", (tester) async {
+    testWidgets('on a training day there is one big button', (tester) async {
       await tester.pumpWidget(today(wednesday));
       await tester.pumpAndSettle();
 
-      expect(find.text('Su entreno de hoy'), findsOneWidget);
-      expect(find.textContaining('Sentarse y levantarse'), findsOneWidget);
-      expect(find.text('Empezar'), findsOneWidget);
+      expect(find.text('Miércoles, 11 de noviembre'), findsOneWidget);
+      expect(find.text('Empezar entreno'), findsOneWidget);
+      expect(find.text('2 ejercicios · unos 4 minutos'), findsOneWidget);
+      expect(find.byType(FilledButton), findsOneWidget);
+    });
+
+    testWidgets('the home screen still fits with the font at 200 %', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(390, 844),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: today(wednesday),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // No overflow errors, and the button is still there (scrolling if needed)
+      expect(tester.takeException(), isNull);
+      expect(find.text('Empezar entreno'), findsOneWidget);
     });
   });
 
@@ -70,8 +90,9 @@ void main() {
       }
 
       // Set 1 → rest (skipped) → set 2 → rest (let it run out)
-      expect(find.textContaining('Serie 1 de 2'), findsOneWidget);
-      expect(find.text('10 repeticiones'), findsOneWidget);
+      expect(find.text('Serie 1 de 2'), findsOneWidget);
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('repeticiones'), findsOneWidget);
       await tester.tap(find.text('Hecho'));
       await tester.pump();
       expect(find.text('Descanse'), findsOneWidget);
@@ -90,9 +111,11 @@ void main() {
       await tester.pump();
 
       expect(find.text('¿Cómo de cansado/a se ha quedado?'), findsOneWidget);
+      await tester.ensureVisible(find.text('5'));
       await tester.tap(find.text('5'));
       await tester.pump();
       expect(find.text('¿Cuánto le ha faltado el aire?'), findsOneWidget);
+      await tester.ensureVisible(find.text('3'));
       await tester.tap(find.text('3'));
       await tester.pump();
 
@@ -106,10 +129,53 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('¿Quiere dejar el entreno?'), findsOneWidget);
-      await tester.tap(find.text('Seguir con el entreno'));
+      await tester.tap(find.text('Seguir entrenando'));
       await tester.pumpAndSettle();
       expect(find.text('¿Tiene fiebre hoy?'), findsOneWidget);
     });
+  });
+
+  testWidgets('a rest can be made 30 seconds longer', (tester) async {
+    await tester.pumpWidget(
+      app(WorkoutScreen(routine: sampleProgram.routines[0])),
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.text('No'));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Hecho'));
+    await tester.pump();
+
+    expect(find.text('1:00'), findsOneWidget);
+    await tester.tap(find.text('30 segundos más'));
+    await tester.pump();
+    expect(find.text('1:30'), findsOneWidget);
+
+    // After the original 60 s it's still resting
+    await tester.pump(const Duration(seconds: 60));
+    expect(find.text('Descanse'), findsOneWidget);
+  });
+
+  testWidgets('on a tablet in landscape the exercise uses two columns', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      app(WorkoutScreen(routine: sampleProgram.routines[0])),
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.text('No'));
+      await tester.pump();
+    }
+
+    // The video (left) sits beside the "Hecho" button (right), not above it
+    final video = tester.getRect(find.text('Vídeo próximamente'));
+    final done = tester.getRect(find.text('Hecho'));
+    expect(done.left, greaterThan(video.right));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('welcome screen offers scanning and typing the code', (

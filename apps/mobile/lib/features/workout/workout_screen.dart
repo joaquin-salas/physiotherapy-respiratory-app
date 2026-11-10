@@ -27,6 +27,7 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   late final List<WorkoutStep> _steps = buildWorkoutSteps(widget.routine);
+  final _startedAt = DateTime.now();
   int _index = 0;
 
   /// A risky answer in the safety check
@@ -67,10 +68,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final leave = await showChoiceDialog<bool>(
       context,
       title: '¿Quiere dejar el entreno?',
-      message: 'Puede volver a empezarlo más tarde.',
+      // TODO(workout log): nothing is saved yet (the app isn't in production)
+      message: 'Lo que ha hecho hasta ahora se guarda.',
       choices: const [
-        Choice('Seguir con el entreno', false, primary: true),
-        Choice('Salir', true),
+        Choice('Seguir entrenando', false, primary: true),
+        Choice('Dejarlo por hoy', true),
       ],
     );
     if (leave == true && mounted) Navigator.of(context).pop();
@@ -118,7 +120,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         question: step.question,
         onAnswer: (_) => _next(),
       ),
-      DoneStep() => WellDoneView(onFinish: _finish),
+      DoneStep() => WellDoneView(
+        exercises: widget.routine.exercises.length,
+        // Real time spent, at least 1 minute
+        minutes: (DateTime.now().difference(_startedAt).inSeconds / 60)
+            .ceil()
+            .clamp(1, 999),
+        onFinish: _finish,
+      ),
     };
   }
 }
