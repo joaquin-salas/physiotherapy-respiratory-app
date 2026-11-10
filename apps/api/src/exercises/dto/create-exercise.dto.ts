@@ -21,9 +21,10 @@ export class CreateExerciseDto {
   @IsNotEmpty()
   description: string;
 
+  // null clears the field on PATCH (@IsOptional skips validation for null and undefined)
   @IsOptional()
   @IsUrl()
-  videoUrl?: string;
+  videoUrl?: string | null;
 
   @IsIn(Object.values(ExerciseGoal))
   goal: ExerciseGoal;
@@ -41,5 +42,5 @@ export class CreateExerciseDto {
 
   @IsOptional()
   @IsString()
-  contraindications?: string;
+  contraindications?: string | null;
 }

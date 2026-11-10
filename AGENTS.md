@@ -213,7 +213,9 @@ Before finishing a task, run `pnpm build` and `pnpm lint` (and `flutter analyze`
 
 ## Current status
 
-- Done: monorepo, PostgreSQL + Prisma, exercises CRUD API + panel page, models for physios/patients/programs,
+- Done: monorepo, PostgreSQL + Prisma, exercises CRUD API + panel pages (list → `/exercises/:id` detail with
+  "Editar" switching to the shared `ExerciseForm`, "Eliminar" refused with 409 if used; `/exercises/new` full page
+  that opens the new exercise), models for physios/patients/programs,
   physio authentication (login/logout, protected API and panel), patients API + panel (list, create, record,
   edit, discharge/reactivate). Physios see only their own patients (others → 404); ADMIN sees and edits all.
   Patients are never deleted (clinical records must be kept): they are discharged (`dischargedAt`).

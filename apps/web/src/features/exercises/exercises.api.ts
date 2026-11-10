@@ -27,19 +27,25 @@ export interface Exercise {
   updatedAt: string;
 }
 
-/** Body of POST /api/exercises (matches CreateExerciseDto in the API) */
-export interface CreateExerciseInput {
+/**
+ * Body of POST /api/exercises and PATCH /api/exercises/:id (matches CreateExerciseDto in the API).
+ * null clears an optional field.
+ */
+export interface ExerciseInput {
   name: string;
   description: string;
   goal: ExerciseGoal;
   level?: number;
   equipment?: string[];
-  videoUrl?: string;
-  contraindications?: string;
+  videoUrl?: string | null;
+  contraindications?: string | null;
 }
 
 export const exercisesApi = {
   getAll: () => apiClient.get<Exercise[]>('/exercises'),
-  create: (data: CreateExerciseInput) =>
-    apiClient.post<Exercise>('/exercises', data),
+  getOne: (id: string) => apiClient.get<Exercise>(`/exercises/${id}`),
+  create: (data: ExerciseInput) => apiClient.post<Exercise>('/exercises', data),
+  update: (id: string, data: ExerciseInput) =>
+    apiClient.patch<Exercise>(`/exercises/${id}`, data),
+  remove: (id: string) => apiClient.delete<Exercise>(`/exercises/${id}`),
 };

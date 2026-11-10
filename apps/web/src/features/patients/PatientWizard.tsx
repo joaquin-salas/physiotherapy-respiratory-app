@@ -1,6 +1,7 @@
 import { Check, ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { BottomBar } from '@/components/bottom-bar';
 import { cn } from '@/lib/utils';
 
 // Shared frame of the "Nuevo paciente" wizard: /patients/new (step 1, creates the patient)
@@ -44,13 +45,7 @@ export function WizardFrame({
         {children}
       </div>
 
-      {/* Pinned to the bottom of the window, right of the sidebar (left-60 = its w-60). The background
-          spans the whole width; the buttons use the same centered column as the content (AppLayout). */}
-      <div className="fixed right-0 bottom-0 left-60 border-t bg-card px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 py-3.5">
-          {footer}
-        </div>
-      </div>
+      <BottomBar>{footer}</BottomBar>
     </div>
   );
 }

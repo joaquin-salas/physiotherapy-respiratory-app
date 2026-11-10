@@ -1,9 +1,11 @@
+import { Plus } from 'lucide-react';
+import { Link } from 'react-router';
 import { PageHeader } from '@/components/page-header';
-import { CreateExerciseDialog } from './CreateExerciseDialog';
+import { Button } from '@/components/ui/button';
 import { useExercises } from './exercises.hooks';
 import { ExercisesTable } from './ExercisesTable';
 
-/** Exercise library: list of exercises + button to create a new one. */
+/** Exercise library: list of exercises (each opens its detail) + button to create a new one. */
 export function ExercisesPage() {
   const { data: exercises, isPending, isError, error, refetch } = useExercises();
 
@@ -12,7 +14,14 @@ export function ExercisesPage() {
       <PageHeader
         title="Ejercicios"
         description="Biblioteca de ejercicios para asignar a los pacientes."
-        actions={<CreateExerciseDialog />}
+        actions={
+          <Button className="h-11 px-4" asChild>
+            <Link to="/exercises/new">
+              <Plus />
+              Nuevo ejercicio
+            </Link>
+          </Button>
+        }
       />
 
       {isPending ? (

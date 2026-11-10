@@ -2,7 +2,9 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
+import { ExerciseDetailPage } from '@/features/exercises/ExerciseDetailPage';
 import { ExercisesPage } from '@/features/exercises/ExercisesPage';
+import { NewExercisePage } from '@/features/exercises/NewExercisePage';
 import { NewPatientPage } from '@/features/patients/NewPatientPage';
 import { PatientDetailPage } from '@/features/patients/PatientDetailPage';
 import { PatientSetupPage } from '@/features/patients/PatientSetupPage';
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
           { path: 'patients/:id/setup', element: <PatientSetupPage /> },
           { path: 'templates', element: <RoutineTemplatesPage /> },
           { path: 'exercises', element: <ExercisesPage /> },
+          { path: 'exercises/new', element: <NewExercisePage /> },
+          { path: 'exercises/:id', element: <ExerciseDetailPage /> },
         ],
       },
     ],

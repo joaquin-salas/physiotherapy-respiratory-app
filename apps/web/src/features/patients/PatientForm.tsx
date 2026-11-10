@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { DateInput } from '@/components/date-input';
+import { FormSection } from '@/components/form-section';
 import { NumberInput } from '@/components/number-input';
 import {
   Field,
@@ -330,28 +331,5 @@ export function PatientForm({
 
       <FieldError errors={[errors.root]} />
     </form>
-  );
-}
-
-/** Title + short explanation (left on wide containers, on top on narrow ones) and a 2-column grid of fields */
-function FormSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="grid gap-x-10 gap-y-4 @3xl:grid-cols-[15rem_1fr]">
-      <div>
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
-      </div>
-      <div className="grid content-start gap-x-5 gap-y-4 sm:grid-cols-2">
-        {children}
-      </div>
-    </section>
   );
 }
